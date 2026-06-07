@@ -93,25 +93,26 @@
 
 </div>
 
-<!-- Firebase SDKs — must come before your script -->
-<script src="[gstatic.com](https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js)"></script>
-<script src="[gstatic.com](https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js)"></script>
+<script type="module">
+  // ========== FIREBASE IMPORTS (ES modules via unpkg — no CDN issues) ==========
+  import { initializeApp } from "[unpkg.com](https://unpkg.com/firebase@10.14.1/app/dist/index.esm2017.js)";
+  import { getDatabase, ref, get, set } from "[unpkg.com](https://unpkg.com/firebase@10.14.1/database/dist/index.esm2017.js)";
 
-<script>
   // ========== FIREBASE CONFIG — REPLACE WITH YOURS ==========
- const firebaseConfig = {
-  apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
-  authDomain: "student-math-practice.firebaseapp.com",
-  projectId: "student-math-practice",
-  storageBucket: "student-math-practice.firebasestorage.app",
-  messagingSenderId: "817731587245",
-  appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
-};
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "[your_project-default-rtdb.firebaseio.com](https://YOUR_PROJECT-default-rtdb.firebaseio.com)",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-  // ========== QUESTION BANK (add your own questions here) ==========
+  // ========== QUESTION BANK ==========
   const questionBank = [
     { q: "What is 25% of 200?", a: 50 },
     { q: "What is 12 × 12?", a: 144 },
@@ -165,19 +166,20 @@
   }
 
   // ========== APP FUNCTIONS ==========
-  function startApp() {
+  async function startApp() {
     const name = document.getElementById("name-input").value.trim();
     if (!name) return;
 
     studentName = name;
     studentKey = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
-    db.ref("students/" + studentKey).once("value").then(function(snapshot) {
+    try {
+      const snapshot = await get(ref(db, "students/" + studentKey));
       if (snapshot.exists()) {
         points = snapshot.val().points || 0;
       } else {
         points = 0;
-        db.ref("students/" + studentKey).set({ name: studentName, points: 0 });
+        await set(ref(db, "students/" + studentKey), { name: studentName, points: 0 });
       }
 
       document.getElementById("student-name").textContent = studentName;
@@ -185,7 +187,9 @@
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("quiz-screen").style.display = "block";
       generateQuestion();
-    });
+    } catch (err) {
+      alert("Could not connect to database. Check your Firebase config.\n\n" + err.message);
+    }
   }
 
   function generateQuestion() {
@@ -208,11 +212,8 @@
     document.getElementById("question-text").textContent = questionObj.q;
   }
 
-  function checkAnswer() {
-    if (answered) {
-      generateQuestion();
-      return;
-    }
+  async function checkAnswer() {
+    if (answered) { generateQuestion(); return; }
 
     const input = document.getElementById("answer-input").value.trim();
     if (input === "") return;
@@ -234,7 +235,7 @@
       if (bonus) msg += " (🔥 streak bonus!)";
       feedback.textContent = msg;
 
-      db.ref("students/" + studentKey + "/points").set(points);
+      await set(ref(db, "students/" + studentKey + "/points"), points);
       document.getElementById("points").textContent = points;
     } else {
       streak = 0;
@@ -245,36 +246,24 @@
     document.getElementById("streak-display").textContent =
       streak > 1 ? `🔥 ${streak} in a row!` : "";
 
-    setTimeout(function() {
-      if (answered) generateQuestion();
-    }, 2000);
+    setTimeout(() => { if (answered) generateQuestion(); }, 2000);
   }
 
   function logout() {
-    studentName = "";
-    studentKey = "";
-    points = 0;
-    streak = 0;
-    answered = false;
+    studentName = ""; studentKey = ""; points = 0; streak = 0; answered = false;
     document.getElementById("quiz-screen").style.display = "none";
     document.getElementById("login-screen").style.display = "block";
     document.getElementById("name-input").value = "";
   }
 
-  // ========== EVENT LISTENERS (safe — runs after DOM is ready) ==========
-  document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("start-btn").addEventListener("click", startApp);
-    document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-    document.getElementById("logout-btn").addEventListener("click", logout);
-    document.getElementById("name-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") startApp();
-    });
-    document.getElementById("answer-input").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") checkAnswer();
-    });
-    document.getElementById("mode-select").addEventListener("change", generateQuestion);
-    document.getElementById("difficulty-select").addEventListener("change", generateQuestion);
-  });
+  // ========== EVENT LISTENERS ==========
+  document.getElementById("start-btn").addEventListener("click", startApp);
+  document.getElementById("submit-btn").addEventListener("click", checkAnswer);
+  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
+  document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
+  document.getElementById("mode-select").addEventListener("change", generateQuestion);
+  document.getElementById("difficulty-select").addEventListener("change", generateQuestion);
 </script>
 
 </body>
