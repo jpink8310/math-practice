@@ -80,9 +80,14 @@
     </div>
     <div class="settings">
       <select id="mode-select" onchange="generateQuestion()">
-        <option value="random">Random Questions</option>
-        <option value="bank">Question Bank</option>
-      </select>
+  <option value="facts">Multiplication Facts</option>
+  <option value="2x1">2-Digit × 1-Digit</option>
+  <option value="2x2">2-Digit × 2-Digit</option>
+  <option value="division">Division</option>
+  <option value="fractions">Fractions</option>
+  <option value="rounding">Decimal Rounding</option>
+  <option value="mixed">Mixed Review</option>
+</select>
       <select id="difficulty-select" onchange="generateQuestion()">
         <option value="easy">Easy</option>
         <option value="medium">Medium</option>
@@ -117,19 +122,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // ========== QUESTION BANK (add/edit as needed) ==========
-const questionBank = [
-  { q: "What is 25% of 200?", a: 50 },
-  { q: "What is 12 × 12?", a: 144 },
-  { q: "What is 81 ÷ 9?", a: 9 },
-  { q: "What is 15²?", a: 225 },
-  { q: "What is √144?", a: 12 },
-  { q: "What is 3/4 as a percentage?", a: 75 },
-  { q: "What is 1000 − 387?", a: 613 },
-  { q: "What is 17 × 6?", a: 102 },
-  { q: "What is 2⁵?", a: 32 },
-  { q: "What is 450 ÷ 15?", a: 30 },
-  { q: "What is 7 × 8 + 9?", a: 65 },
-  { q: "What is 1/5 of 350?", a: 70 },
+const fractionBank = [
+  { q: "What is 1/2 + 1/4? (answer as a decimal)", a: 0.75 },
+  { q: "What is 3/4 + 1/4? (answer as a decimal)", a: 1 },
+  { q: "What is 2/5 + 1/5? (answer as a decimal)", a: 0.6 },
+  { q: "What is 4/10 - 1/10? (answer as a decimal)", a: 0.3 },
+  { q: "What is 2/3 + 1/6? (answer as a decimal)", a: 0.8333 },
+  { q: "What is 5/8 - 1/4? (answer as a decimal)", a: 0.375 },
+  { q: "What is 1/4 + 1/2? (answer as a decimal)", a: 0.75 },
+  { q: "What is 7/10 - 2/10? (answer as a decimal)", a: 0.5 }
 ];
 
 // ========== STATE ==========
@@ -170,6 +171,65 @@ function randomQuestion(difficulty) {
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+ function multiplicationFact() {
+  const a = randInt(1, 12);
+  const b = randInt(1, 12);
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function twoDigitOneDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(2, 9);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function twoDigitTwoDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(10, 99);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function divisionQuestion() {
+  const answer = randInt(2, 50);
+  const divisor = randInt(2, 12);
+  const dividend = answer * divisor;
+
+  return {
+    q: `What is ${dividend} ÷ ${divisor}?`,
+    a: answer
+  };
+}
+
+function fractionQuestion() {
+  return fractionBank[randInt(0, fractionBank.length - 1)];
+}
+
+function roundingQuestion() {
+  const number = +(Math.random() * 100).toFixed(3);
+
+  if (Math.random() < 0.5) {
+    return {
+      q: `Round ${number} to the nearest tenth`,
+      a: Number(number.toFixed(1))
+    };
+  }
+
+  return {
+    q: `Round ${number} to the nearest hundredth`,
+    a: Number(number.toFixed(2))
+  };
+}
 }
 
 // ========== APP LOGIC ==========
@@ -199,22 +259,58 @@ function startApp() {
 
 function generateQuestion() {
   answered = false;
+
   document.getElementById("feedback").textContent = "";
   document.getElementById("answer-input").value = "";
   document.getElementById("answer-input").focus();
 
   const mode = document.getElementById("mode-select").value;
-  const difficulty = document.getElementById("difficulty-select").value;
+
   let questionObj;
 
-  if (mode === "bank") {
-    questionObj = questionBank[randInt(0, questionBank.length - 1)];
-  } else {
-    questionObj = randomQuestion(difficulty);
+  switch (mode) {
+    case "facts":
+      questionObj = multiplicationFact();
+      break;
+
+    case "2x1":
+      questionObj = twoDigitOneDigit();
+      break;
+
+    case "2x2":
+      questionObj = twoDigitTwoDigit();
+      break;
+
+    case "division":
+      questionObj = divisionQuestion();
+      break;
+
+    case "fractions":
+      questionObj = fractionQuestion();
+      break;
+
+    case "rounding":
+      questionObj = roundingQuestion();
+      break;
+
+    case "mixed":
+      const generators = [
+        multiplicationFact,
+        twoDigitOneDigit,
+        twoDigitTwoDigit,
+        divisionQuestion,
+        fractionQuestion,
+        roundingQuestion
+      ];
+
+      questionObj =
+        generators[randInt(0, generators.length - 1)]();
+      break;
   }
 
   currentAnswer = questionObj.a;
-  document.getElementById("question-text").textContent = questionObj.q;
+  document.getElementById("question-text").textContent =
+    questionObj.q;
 }
 
 function checkAnswer() {
