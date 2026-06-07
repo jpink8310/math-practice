@@ -94,23 +94,24 @@
 </div>
 
 <script type="module">
-  // ========== FIREBASE IMPORTS ==========
-  import { initializeApp } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js)";
-  import { getDatabase, ref, get, set } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js)";
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // ========== FIREBASE CONFIG — REPLACE WITH YOURS ==========
+  // Your web app's Firebase configuration
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "[your_project-default-rtdb.firebaseio.com](https://YOUR_PROJECT-default-rtdb.firebaseio.com)",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
+    authDomain: "student-math-practice.firebaseapp.com",
+    projectId: "student-math-practice",
+    storageBucket: "student-math-practice.firebasestorage.app",
+    messagingSenderId: "817731587245",
+    appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
   };
 
+  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+</script>
 
   // ========== QUESTION BANK ==========
   const questionBank = [
