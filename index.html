@@ -172,7 +172,65 @@ function randomQuestion(difficulty) {
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+function multiplicationFact() {
+  const a = randInt(1, 12);
+  const b = randInt(1, 12);
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
 
+function twoDigitOneDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(2, 9);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function twoDigitTwoDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(10, 99);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function divisionQuestion() {
+  const answer = randInt(2, 50);
+  const divisor = randInt(2, 12);
+  const dividend = answer * divisor;
+
+  return {
+    q: `What is ${dividend} ÷ ${divisor}?`,
+    a: answer
+  };
+}
+
+function fractionQuestion() {
+  return fractionBank[randInt(0, fractionBank.length - 1)];
+}
+
+function roundingQuestion() {
+  const number = +(Math.random() * 100).toFixed(3);
+
+  if (Math.random() < 0.5) {
+    return {
+      q: `Round ${number} to the nearest tenth`,
+      a: Number(number.toFixed(1))
+    };
+  }
+
+  return {
+    q: `Round ${number} to the nearest hundredth`,
+    a: Number(number.toFixed(2))
+  };
+}
 // ========== APP LOGIC ==========
 function startApp() {
   const name = document.getElementById("name-input").value.trim();
