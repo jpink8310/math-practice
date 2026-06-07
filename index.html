@@ -95,8 +95,8 @@
 
 <script type="module">
   // ========== FIREBASE IMPORTS ==========
-  import { initializeApp } from "[gstatic.com](https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js)";
-  import { getDatabase, ref, get, set } from "[gstatic.com](https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js)";
+  import { initializeApp } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js)";
+  import { getDatabase, ref, get, set } from "[gstatic.com](https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js)";
 
   // ========== FIREBASE CONFIG — REPLACE WITH YOURS ==========
   const firebaseConfig = {
@@ -224,4 +224,47 @@
 
     if (userAnswer === currentAnswer) {
       const diff = document.getElementById("difficulty-select").value;
-      const award
+      const award = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
+      const bonus = streak >= 4 ? 1 : 0;
+      const total = award + bonus;
+      streak++;
+      points += total;
+
+      feedback.className = "feedback correct celebration";
+      let msg = `Correct! +${total} point${total > 1 ? "s" : ""}`;
+      if (bonus) msg += " (streak bonus!)";
+      feedback.textContent = msg;
+
+      await set(ref(db, "students/" + studentKey + "/points"), points);
+      document.getElementById("points").textContent = points;
+    } else {
+      streak = 0;
+      feedback.className = "feedback incorrect";
+      feedback.textContent = `The answer was ${currentAnswer}`;
+    }
+
+    document.getElementById("streak-display").textContent =
+      streak > 1 ? `${streak} in a row!` : "";
+
+    setTimeout(() => { if (answered) generateQuestion(); }, 2000);
+  }
+
+  function logout() {
+    studentName = ""; studentKey = ""; points = 0; streak = 0; answered = false;
+    document.getElementById("quiz-screen").style.display = "none";
+    document.getElementById("login-screen").style.display = "block";
+    document.getElementById("name-input").value = "";
+  }
+
+  // ========== EVENT LISTENERS ==========
+  document.getElementById("start-btn").addEventListener("click", startApp);
+  document.getElementById("submit-btn").addEventListener("click", checkAnswer);
+  document.getElementById("logout-btn").addEventListener("click", logout);
+  document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
+  document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
+  document.getElementById("mode-select").addEventListener("change", generateQuestion);
+  document.getElementById("difficulty-select").addEventListener("change", generateQuestion);
+</script>
+
+</body>
+</html>
