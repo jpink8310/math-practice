@@ -94,9 +94,9 @@
 </div>
 
 <script type="module">
-  // ========== FIREBASE IMPORTS (ES modules via unpkg — no CDN issues) ==========
-  import { initializeApp } from "[unpkg.com](https://unpkg.com/firebase@10.14.1/app/dist/index.esm2017.js)";
-  import { getDatabase, ref, get, set } from "[unpkg.com](https://unpkg.com/firebase@10.14.1/database/dist/index.esm2017.js)";
+  // ========== FIREBASE IMPORTS ==========
+  import { initializeApp } from "[gstatic.com](https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js)";
+  import { getDatabase, ref, get, set } from "[gstatic.com](https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js)";
 
   // ========== FIREBASE CONFIG — REPLACE WITH YOURS ==========
   const firebaseConfig = {
@@ -115,16 +115,16 @@
   // ========== QUESTION BANK ==========
   const questionBank = [
     { q: "What is 25% of 200?", a: 50 },
-    { q: "What is 12 × 12?", a: 144 },
-    { q: "What is 81 ÷ 9?", a: 9 },
-    { q: "What is 15²?", a: 225 },
-    { q: "What is √144?", a: 12 },
+    { q: "What is 12 x 12?", a: 144 },
+    { q: "What is 81 / 9?", a: 9 },
+    { q: "What is 15 squared?", a: 225 },
+    { q: "What is the square root of 144?", a: 12 },
     { q: "What is 3/4 as a percentage?", a: 75 },
-    { q: "What is 1000 − 387?", a: 613 },
-    { q: "What is 17 × 6?", a: 102 },
-    { q: "What is 2⁵?", a: 32 },
-    { q: "What is 450 ÷ 15?", a: 30 },
-    { q: "What is 7 × 8 + 9?", a: 65 },
+    { q: "What is 1000 - 387?", a: 613 },
+    { q: "What is 17 x 6?", a: 102 },
+    { q: "What is 2 to the power of 5?", a: 32 },
+    { q: "What is 450 / 15?", a: 30 },
+    { q: "What is 7 x 8 + 9?", a: 65 },
     { q: "What is 1/5 of 350?", a: 70 },
   ];
 
@@ -143,7 +143,7 @@
 
   function randomQuestion(difficulty) {
     let a, b, op, answer;
-    const ops = ["+", "−", "×"];
+    const ops = ["+", "-", "x"];
 
     if (difficulty === "easy") {
       a = randInt(1, 20); b = randInt(1, 20);
@@ -154,12 +154,12 @@
     }
 
     op = ops[randInt(0, 2)];
-    if (op === "−" && b > a) [a, b] = [b, a];
+    if (op === "-" && b > a) [a, b] = [b, a];
 
     switch (op) {
       case "+": answer = a + b; break;
-      case "−": answer = a - b; break;
-      case "×": answer = a * b; break;
+      case "-": answer = a - b; break;
+      case "x": answer = a * b; break;
     }
 
     return { q: `${a} ${op} ${b} = ?`, a: answer };
@@ -224,47 +224,4 @@
 
     if (userAnswer === currentAnswer) {
       const diff = document.getElementById("difficulty-select").value;
-      const award = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
-      const bonus = streak >= 4 ? 1 : 0;
-      const total = award + bonus;
-      streak++;
-      points += total;
-
-      feedback.className = "feedback correct celebration";
-      let msg = `✅ Correct! +${total} point${total > 1 ? "s" : ""}`;
-      if (bonus) msg += " (🔥 streak bonus!)";
-      feedback.textContent = msg;
-
-      await set(ref(db, "students/" + studentKey + "/points"), points);
-      document.getElementById("points").textContent = points;
-    } else {
-      streak = 0;
-      feedback.className = "feedback incorrect";
-      feedback.textContent = `❌ The answer was ${currentAnswer}`;
-    }
-
-    document.getElementById("streak-display").textContent =
-      streak > 1 ? `🔥 ${streak} in a row!` : "";
-
-    setTimeout(() => { if (answered) generateQuestion(); }, 2000);
-  }
-
-  function logout() {
-    studentName = ""; studentKey = ""; points = 0; streak = 0; answered = false;
-    document.getElementById("quiz-screen").style.display = "none";
-    document.getElementById("login-screen").style.display = "block";
-    document.getElementById("name-input").value = "";
-  }
-
-  // ========== EVENT LISTENERS ==========
-  document.getElementById("start-btn").addEventListener("click", startApp);
-  document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-  document.getElementById("logout-btn").addEventListener("click", logout);
-  document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
-  document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-  document.getElementById("mode-select").addEventListener("change", generateQuestion);
-  document.getElementById("difficulty-select").addEventListener("change", generateQuestion);
-</script>
-
-</body>
-</html>
+      const award
