@@ -79,20 +79,7 @@
       <span id="student-name"></span> — <span id="points">0</span> points
     </div>
     <div class="settings">
-      <select id="mode-select" onchange="generateQuestion()">
-  <option value="facts">Multiplication Facts</option>
-  <option value="2x1">2-Digit × 1-Digit</option>
-  <option value="2x2">2-Digit × 2-Digit</option>
-  <option value="division">Division</option>
-  <option value="fractions">Fractions</option>
-  <option value="rounding">Decimal Rounding</option>
-  <option value="mixed">Mixed Review</option>
-</select>
-      <select id="difficulty-select" onchange="generateQuestion()">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
+     
     </div>
     <div class="question" id="question-text">Loading...</div>
     <div class="feedback" id="feedback"></div>
@@ -140,22 +127,6 @@ let points = 0;
 let streak = 0;
 let currentAnswer = 0;
 let answered = false;
-
-// ========== RANDOM QUESTION GENERATOR ==========
-function randomQuestion(difficulty) {
-  let a, b, op, question, answer;
-  const ops = ["+", "−", "×"];
-
-  if (difficulty === "easy") {
-    a = randInt(1, 20); b = randInt(1, 20);
-    op = ops[randInt(0, 2)];
-  } else if (difficulty === "medium") {
-    a = randInt(10, 100); b = randInt(2, 50);
-    op = ops[randInt(0, 2)];
-  } else {
-    a = randInt(20, 200); b = randInt(5, 100);
-    op = ops[randInt(0, 2)];
-  }
 
   // Avoid negative results for subtraction
   if (op === "−" && b > a) [a, b] = [b, a];
@@ -263,49 +234,17 @@ function generateQuestion() {
   document.getElementById("answer-input").value = "";
   document.getElementById("answer-input").focus();
 
-  const mode = document.getElementById("mode-select").value;
+  const generators = [
+    multiplicationFact,
+    twoDigitOneDigit,
+    twoDigitTwoDigit,
+    divisionQuestion,
+    fractionQuestion,
+    roundingQuestion
+  ];
 
-  let questionObj;
-
-  switch (mode) {
-    case "facts":
-      questionObj = multiplicationFact();
-      break;
-
-    case "2x1":
-      questionObj = twoDigitOneDigit();
-      break;
-
-    case "2x2":
-      questionObj = twoDigitTwoDigit();
-      break;
-
-    case "division":
-      questionObj = divisionQuestion();
-      break;
-
-    case "fractions":
-      questionObj = fractionQuestion();
-      break;
-
-    case "rounding":
-      questionObj = roundingQuestion();
-      break;
-
-    case "mixed":
-      const generators = [
-        multiplicationFact,
-        twoDigitOneDigit,
-        twoDigitTwoDigit,
-        divisionQuestion,
-        fractionQuestion,
-        roundingQuestion
-      ];
-
-      questionObj =
-        generators[randInt(0, generators.length - 1)]();
-      break;
-  }
+  const questionObj =
+    generators[randInt(0, generators.length - 1)]();
 
   currentAnswer = questionObj.a;
   document.getElementById("question-text").textContent =
@@ -324,12 +263,13 @@ function checkAnswer() {
 
   if (userAnswer === currentAnswer) {
     // Points scale with difficulty
-    const diff = document.getElementById("difficulty-select").value;
-    const award = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
     streak++;
-    const bonus = streak >= 5 ? 1 : 0; // streak bonus
-    const total = award + bonus;
-    points += total;
+
+const award = 1;
+const bonus = streak >= 5 ? 1 : 0;
+const total = award + bonus;
+
+points += total;
 
     feedback.className = "feedback correct celebration";
     let msg = `✅ Correct! +${total} point${total > 1 ? "s" : ""}`;
