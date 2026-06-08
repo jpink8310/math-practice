@@ -78,9 +78,7 @@
     <div class="points-display">
       <span id="student-name"></span> — <span id="points">0</span> points
     </div>
-    <div class="settings">
-     
-    </div>
+    <div class="settings"></div>
     <div class="question" id="question-text">Loading...</div>
     <div class="feedback" id="feedback"></div>
     <input type="number" id="answer-input" placeholder="Your answer"
@@ -263,7 +261,7 @@ function checkAnswer() {
 
   if (userAnswer === currentAnswer) {
     // Points scale with difficulty
-    streak++;
+   streak++;
 
 const award = 1;
 const bonus = streak >= 5 ? 1 : 0;
