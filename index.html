@@ -106,18 +106,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ========== QUESTION BANK (add/edit as needed) ==========
-const fractionBank = [
-  { q: "What is 1/2 + 1/4? (answer as a decimal)", a: 0.75 },
-  { q: "What is 3/4 + 1/4? (answer as a decimal)", a: 1 },
-  { q: "What is 2/5 + 1/5? (answer as a decimal)", a: 0.6 },
-  { q: "What is 4/10 - 1/10? (answer as a decimal)", a: 0.3 },
-  { q: "What is 2/3 + 1/6? (answer as a decimal)", a: 0.8333 },
-  { q: "What is 5/8 - 1/4? (answer as a decimal)", a: 0.375 },
-  { q: "What is 1/4 + 1/2? (answer as a decimal)", a: 0.75 },
-  { q: "What is 7/10 - 2/10? (answer as a decimal)", a: 0.5 }
-];
-
 // ========== STATE ==========
 let studentName = "";
 let studentKey = "";
