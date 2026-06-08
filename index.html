@@ -104,8 +104,8 @@
 </div>
 
 <!-- Firebase SDK -->
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/firebase@9.6.0/app/dist/index.browser.js)"></script>
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/firebase@9.6.0/database/dist/index.browser.js)"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js)"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js)"></script>
 
 <script>
   // ========== FIREBASE CONFIG ==========
@@ -180,7 +180,7 @@
 
   function roundingQuestion() {
     const number = +(Math.random() * 100).toFixed(3);
-    if (Math.random() < 0.49) {
+    if (Math.random() < 0.5) {
       return { q: `Round ${number} to the nearest tenth`, a: Number(number.toFixed(1)) };
     }
     return { q: `Round ${number} to the nearest hundredth`, a: Number(number.toFixed(2)) };
