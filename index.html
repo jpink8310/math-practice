@@ -22,11 +22,13 @@
     font-size: 1.2rem; color: #6366f1; font-weight: 600; margin-bottom: 24px;
   }
   .question {
-    font-size: 2rem; font-weight: 700; margin: 24px 0; color: #1e293b;
+    font-size: 2rem; font-weight: 700; margin: 24px 0;
+    color: #1e293b;
   }
   input, button, select {
     font-size: 1.1rem; padding: 12px 20px; border-radius: 10px;
-    border: 2px solid #e2e8f0; outline: none; width: 100%; margin-bottom: 12px;
+    border: 2px solid #e2e8f0; outline: none; width: 100%;
+    margin-bottom: 12px;
   }
   input:focus { border-color: #6366f1; }
   button {
@@ -36,7 +38,8 @@
   button:hover { background: #4f46e5; }
   button:active { transform: scale(0.98); }
   .feedback {
-    font-size: 1.3rem; font-weight: 700; margin: 16px 0; min-height: 40px;
+    font-size: 1.3rem; font-weight: 700; margin: 16px 0;
+    min-height: 40px;
   }
   .correct { color: #16a34a; }
   .incorrect { color: #dc2626; }
@@ -44,47 +47,29 @@
   select { background: #fff; }
   .settings { display: flex; gap: 8px; margin-bottom: 16px; }
   .settings select { flex: 1; }
-  .btn-secondary { background: #e2e8f0; color: #475569; }
+  .btn-secondary {
+    background: #e2e8f0; color: #475569;
+  }
   .btn-secondary:hover { background: #cbd5e1; }
+  .celebration {
+    font-size: 3rem; animation: pop 0.4s ease-out;
+  }
   @keyframes pop {
     0% { transform: scale(0); opacity: 0; }
     80% { transform: scale(1.2); }
     100% { transform: scale(1); opacity: 1; }
   }
-  .celebration { animation: pop 0.4s ease-out; }
-
-  /* Leaderboard */
-  .leaderboard { margin-top: 24px; text-align: left; }
-  .leaderboard h2 { font-size: 1.1rem; color: #6366f1; margin-bottom: 12px; text-align: center; }
-  .lb-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 12px; border-radius: 8px; margin-bottom: 6px;
-    background: #f8fafc; font-size: 0.95rem;
-  }
-  .lb-row.gold   { background: #fef9c3; font-weight: 700; }
-  .lb-row.silver { background: #f1f5f9; font-weight: 600; }
-  .lb-row.bronze { background: #fdf4e7; font-weight: 600; }
-  .lb-rank { width: 28px; color: #94a3b8; font-weight: 700; }
-  .lb-name { flex: 1; padding: 0 8px; }
-  .lb-pts { color: #6366f1; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <div class="card" id="app">
-
   <!-- Login Screen -->
   <div id="login-screen">
     <h1>🧮 Math Practice</h1>
-    <p style="margin-bottom:24px; color:#64748b;">Enter your name to start</p>
+    <p style="margin-bottom:24px;color:#64748b;">Enter your name to start</p>
     <input type="text" id="name-input" placeholder="Your name" autocomplete="off">
-    <button id="start-btn">Let's Go!</button>
-
-    <!-- Leaderboard on login screen -->
-    <div class="leaderboard">
-      <h2>🏆 Top 10</h2>
-      <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
-    </div>
+    <button onclick="startApp()">Let's Go!</button>
   </div>
 
   <!-- Quiz Screen -->
@@ -93,23 +78,39 @@
     <div class="points-display">
       <span id="student-name"></span> — <span id="points">0</span> points
     </div>
+    <div class="settings">
+      <select id="mode-select" onchange="generateQuestion()">
+  <option value="facts">Multiplication Facts</option>
+  <option value="2x1">2-Digit × 1-Digit</option>
+  <option value="2x2">2-Digit × 2-Digit</option>
+  <option value="division">Division</option>
+  <option value="fractions">Fractions</option>
+  <option value="rounding">Decimal Rounding</option>
+  <option value="mixed">Mixed Review</option>
+</select>
+      <select id="difficulty-select" onchange="generateQuestion()">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
     <div class="question" id="question-text">Loading...</div>
     <div class="feedback" id="feedback"></div>
-    <input type="number" id="answer-input" placeholder="Your answer" inputmode="numeric">
-    <button id="submit-btn">Submit</button>
+    <input type="number" id="answer-input" placeholder="Your answer"
+           onkeydown="if(event.key==='Enter') checkAnswer()" inputmode="numeric">
+    <button onclick="checkAnswer()">Submit</button>
     <div class="streak" id="streak-display"></div>
-    <button class="btn-secondary" id="logout-btn">Change Student</button>
+    <button class="btn-secondary" onclick="logout()">Change Student</button>
   </div>
-
 </div>
 
 <!-- Firebase SDK -->
-<script src="firebase-app-compat.js"></script>
-<script src="firebase-database-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+ 
 <script>
-  // ========== FIREBASE CONFIG ==========
-  const firebaseConfig = {
+// ========== FIREBASE CONFIG — REPLACE WITH YOURS ==========
+const firebaseConfig = {
   apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
   authDomain: "student-math-practice.firebaseapp.com",
   projectId: "student-math-practice",
@@ -117,216 +118,252 @@
   messagingSenderId: "817731587245",
   appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
 };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+// ========== QUESTION BANK (add/edit as needed) ==========
+const fractionBank = [
+  { q: "What is 1/2 + 1/4? (answer as a decimal)", a: 0.75 },
+  { q: "What is 3/4 + 1/4? (answer as a decimal)", a: 1 },
+  { q: "What is 2/5 + 1/5? (answer as a decimal)", a: 0.6 },
+  { q: "What is 4/10 - 1/10? (answer as a decimal)", a: 0.3 },
+  { q: "What is 2/3 + 1/6? (answer as a decimal)", a: 0.8333 },
+  { q: "What is 5/8 - 1/4? (answer as a decimal)", a: 0.375 },
+  { q: "What is 1/4 + 1/2? (answer as a decimal)", a: 0.75 },
+  { q: "What is 7/10 - 2/10? (answer as a decimal)", a: 0.5 }
+];
 
-  // ========== STATE ==========
-  let studentName = "";
-  let studentKey = "";
-  let points = 0;
-  let streak = 0;
-  let currentAnswer = 0;
-  let answered = false;
+// ========== STATE ==========
+let studentName = "";
+let studentKey = "";
+let points = 0;
+let streak = 0;
+let currentAnswer = 0;
+let answered = false;
 
-  // ========== HELPERS ==========
-  function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+// ========== RANDOM QUESTION GENERATOR ==========
+function randomQuestion(difficulty) {
+  let a, b, op, question, answer;
+  const ops = ["+", "−", "×"];
+
+  if (difficulty === "easy") {
+    a = randInt(1, 20); b = randInt(1, 20);
+    op = ops[randInt(0, 2)];
+  } else if (difficulty === "medium") {
+    a = randInt(10, 100); b = randInt(2, 50);
+    op = ops[randInt(0, 2)];
+  } else {
+    a = randInt(20, 200); b = randInt(5, 100);
+    op = ops[randInt(0, 2)];
   }
 
-  // ========== QUESTION GENERATORS ==========
-  function multiplicationFact() {
-    const a = randInt(1, 12), b = randInt(1, 12);
-    return { q: `What is ${a} x ${b}?`, a: a * b };
+  // Avoid negative results for subtraction
+  if (op === "−" && b > a) [a, b] = [b, a];
+
+  switch (op) {
+    case "+": answer = a + b; break;
+    case "−": answer = a - b; break;
+    case "×": answer = a * b; break;
+  }
+  question = `${a} ${op} ${b} = ?`;
+  return { q: question, a: answer };
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function multiplicationFact() {
+  const a = randInt(1, 12);
+  const b = randInt(1, 12);
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function twoDigitOneDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(2, 9);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function twoDigitTwoDigit() {
+  const a = randInt(10, 99);
+  const b = randInt(10, 99);
+
+  return {
+    q: `What is ${a} × ${b}?`,
+    a: a * b
+  };
+}
+
+function divisionQuestion() {
+  const answer = randInt(2, 50);
+  const divisor = randInt(2, 12);
+  const dividend = answer * divisor;
+
+  return {
+    q: `What is ${dividend} ÷ ${divisor}?`,
+    a: answer
+  };
+}
+
+function fractionQuestion() {
+  return fractionBank[randInt(0, fractionBank.length - 1)];
+}
+
+function roundingQuestion() {
+  const number = +(Math.random() * 100).toFixed(3);
+
+  if (Math.random() < 0.5) {
+    return {
+      q: `Round ${number} to the nearest tenth`,
+      a: Number(number.toFixed(1))
+    };
   }
 
-  function twoDigitOneDigit() {
-    const a = randInt(10, 99), b = randInt(2, 9);
-    return { q: `What is ${a} x ${b}?`, a: a * b };
-  }
+  return {
+    q: `Round ${number} to the nearest hundredth`,
+    a: Number(number.toFixed(2))
+  };
+}
+// ========== APP LOGIC ==========
+function startApp() {
+  const name = document.getElementById("name-input").value.trim();
+  if (!name) return;
 
-  function twoDigitTwoDigit() {
-    const a = randInt(10, 99), b = randInt(10, 99);
-    return { q: `What is ${a} x ${b}?`, a: a * b };
-  }
+  studentName = name;
+  studentKey = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
-  function divisionQuestion() {
-    const answer = randInt(2, 50), divisor = randInt(2, 12);
-    return { q: `What is ${answer * divisor} / ${divisor}?`, a: answer };
-  }
-
-  function twoDigitAddition() {
-    const a = randInt(10, 99), b = randInt(10, 99);
-    return { q: `What is ${a} + ${b}?`, a: a + b };
-  }
-
-  function twoDigitSubtraction() {
-    const a = randInt(10, 99), b = randInt(10, 99);
-    const big = Math.max(a, b), small = Math.min(a, b);
-    return { q: `What is ${big} - ${small}?`, a: big - small };
-  }
-
-  function threeDigitAddition() {
-    const a = randInt(100, 999), b = randInt(100, 999);
-    return { q: `What is ${a} + ${b}?`, a: a + b };
-  }
-
-  function threeDigitSubtraction() {
-    const a = randInt(100, 999), b = randInt(100, 999);
-    const big = Math.max(a, b), small = Math.min(a, b);
-    return { q: `What is ${big} - ${small}?`, a: big - small };
-  }
-
-  function roundingQuestion() {
-    const number = +(Math.random() * 100).toFixed(3);
-    if (Math.random() < 0.5) {
-      return { q: `Round ${number} to the nearest tenth`, a: Number(number.toFixed(1)) };
-    }
-    return { q: `Round ${number} to the nearest hundredth`, a: Number(number.toFixed(2)) };
-  }
-
-  const generators = [
-    multiplicationFact,
-    twoDigitOneDigit,
-    twoDigitTwoDigit,
-    divisionQuestion,
-    twoDigitAddition,
-    twoDigitSubtraction,
-    threeDigitAddition,
-    threeDigitSubtraction,
-    roundingQuestion
-  ];
-
-  // ========== APP FUNCTIONS ==========
-  function generateQuestion() {
-    answered = false;
-    document.getElementById("feedback").textContent = "";
-    document.getElementById("answer-input").value = "";
-    document.getElementById("answer-input").focus();
-
-    const questionObj = generators[randInt(0, generators.length - 1)]();
-    currentAnswer = questionObj.a;
-    document.getElementById("question-text").textContent = questionObj.q;
-  }
-
-  async function startApp() {
-    const name = document.getElementById("name-input").value.trim();
-    if (!name) return;
-
-    studentName = name;
-    studentKey = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
-
-    try {
-      const snapshot = await db.ref("students/" + studentKey).once("value");
-      if (snapshot.exists()) {
-        points = snapshot.val().points || 0;
-      } else {
-        points = 0;
-        await db.ref("students/" + studentKey).set({
-          name: studentName, points: 0, correct: 0, attempted: 0
-        });
-      }
-
-      document.getElementById("student-name").textContent = studentName;
-      document.getElementById("points").textContent = points;
-      document.getElementById("login-screen").style.display = "none";
-      document.getElementById("quiz-screen").style.display = "block";
-      generateQuestion();
-    } catch (err) {
-      alert("Could not connect. Check your Firebase config.\n\n" + err.message);
-    }
-  }
-
-  async function checkAnswer() {
-    if (answered) { generateQuestion(); return; }
-
-    const input = document.getElementById("answer-input").value.trim();
-    if (input === "") return;
-
-    const userAnswer = parseFloat(input);
-    const feedback = document.getElementById("feedback");
-    answered = true;
-
-    // Read current stats
-    const snap = await db.ref("students/" + studentKey).once("value");
-    const data = snap.val() || {};
-    const prevCorrect   = data.correct   || 0;
-    const prevAttempted = data.attempted || 0;
-
-    if (userAnswer === currentAnswer) {
-      streak++;
-      const award = 1;
-      const bonus = streak >= 5 ? 1 : 0;
-      const total = award + bonus;
-      points += total;
-
-      feedback.className = "feedback correct celebration";
-      let msg = `Correct! +${total} point${total > 1 ? "s" : ""}`;
-      if (bonus) msg += " (streak bonus!)";
-      feedback.textContent = msg;
-
-      await db.ref("students/" + studentKey).update({
-        points:    points,
-        correct:   prevCorrect + 1,
-        attempted: prevAttempted + 1
-      });
-      document.getElementById("points").textContent = points;
+  // Load or create student in Firebase
+  db.ref("students/" + studentKey).once("value").then(snapshot => {
+    if (snapshot.exists()) {
+      points = snapshot.val().points || 0;
     } else {
-      streak = 0;
-      feedback.className = "feedback incorrect";
-      feedback.textContent = `The answer was ${currentAnswer}`;
-
-      await db.ref("students/" + studentKey).update({
-        attempted: prevAttempted + 1
-      });
+      points = 0;
+      db.ref("students/" + studentKey).set({ name: studentName, points: 0 });
     }
 
-    document.getElementById("streak-display").textContent =
-      streak > 1 ? `${streak} in a row!` : "";
-
-    setTimeout(() => { if (answered) generateQuestion(); }, 2000);
-  }
-
-  function logout() {
-    studentName = ""; studentKey = ""; points = 0; streak = 0; answered = false;
-    document.getElementById("quiz-screen").style.display = "none";
-    document.getElementById("login-screen").style.display = "block";
-    document.getElementById("name-input").value = "";
-    loadLeaderboard();
-  }
-
-  // ========== LEADERBOARD ==========
-  function loadLeaderboard() {
-    db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
-      const list = document.getElementById("leaderboard-list");
-      if (!snapshot.exists()) { list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>"; return; }
-
-      const entries = [];
-      snapshot.forEach(child => entries.push(child.val()));
-      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-      const medals = ["🥇", "🥈", "🥉"];
-      const rowClass = ["gold", "silver", "bronze"];
-
-      list.innerHTML = entries.map((s, i) => `
-        <div class="lb-row ${rowClass[i] || ''}">
-          <span class="lb-rank">${medals[i] || (i + 1)}</span>
-          <span class="lb-name">${s.name || "Unknown"}</span>
-          <span class="lb-pts">${s.points || 0} pts</span>
-        </div>
-      `).join("");
-    });
-  }
-
-  // ========== EVENT LISTENERS ==========
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("start-btn").addEventListener("click", startApp);
-    document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-    document.getElementById("logout-btn").addEventListener("click", logout);
-    document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
-    document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-    loadLeaderboard();
+    document.getElementById("student-name").textContent = studentName;
+    document.getElementById("points").textContent = points;
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("quiz-screen").style.display = "block";
+    generateQuestion();
   });
+}
+
+function generateQuestion() {
+  answered = false;
+
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("answer-input").value = "";
+  document.getElementById("answer-input").focus();
+
+  const mode = document.getElementById("mode-select").value;
+
+  let questionObj;
+
+  switch (mode) {
+    case "facts":
+      questionObj = multiplicationFact();
+      break;
+
+    case "2x1":
+      questionObj = twoDigitOneDigit();
+      break;
+
+    case "2x2":
+      questionObj = twoDigitTwoDigit();
+      break;
+
+    case "division":
+      questionObj = divisionQuestion();
+      break;
+
+    case "fractions":
+      questionObj = fractionQuestion();
+      break;
+
+    case "rounding":
+      questionObj = roundingQuestion();
+      break;
+
+    case "mixed":
+      const generators = [
+        multiplicationFact,
+        twoDigitOneDigit,
+        twoDigitTwoDigit,
+        divisionQuestion,
+        fractionQuestion,
+        roundingQuestion
+      ];
+
+      questionObj =
+        generators[randInt(0, generators.length - 1)]();
+      break;
+  }
+
+  currentAnswer = questionObj.a;
+  document.getElementById("question-text").textContent =
+    questionObj.q;
+}
+
+function checkAnswer() {
+  if (answered) { generateQuestion(); return; }
+
+  const input = document.getElementById("answer-input").value.trim();
+  if (input === "") return;
+
+  const userAnswer = parseFloat(input);
+  const feedback = document.getElementById("feedback");
+  answered = true;
+
+  if (userAnswer === currentAnswer) {
+    // Points scale with difficulty
+    const diff = document.getElementById("difficulty-select").value;
+    const award = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
+    streak++;
+    const bonus = streak >= 5 ? 1 : 0; // streak bonus
+    const total = award + bonus;
+    points += total;
+
+    feedback.className = "feedback correct celebration";
+    let msg = `✅ Correct! +${total} point${total > 1 ? "s" : ""}`;
+    if (bonus) msg += " (🔥 streak bonus!)";
+    feedback.textContent = msg;
+
+    // Save to Firebase
+    db.ref("students/" + studentKey + "/points").set(points);
+    document.getElementById("points").textContent = points;
+  } else {
+    streak = 0;
+    feedback.className = "feedback incorrect";
+    feedback.textContent = `❌ The answer was ${currentAnswer}`;
+  }
+
+  updateStreak();
+
+  // Auto-advance after a pause
+  setTimeout(() => {
+    if (answered) generateQuestion();
+  }, 2000);
+}
+
+function updateStreak() {
+  const el = document.getElementById("streak-display");
+  el.textContent = streak > 1 ? `🔥 ${streak} in a row!` : "";
+}
+
+function logout() {
+  document.getElementById("quiz-screen").style.display = "none";
+  document.getElementById("login-screen").style.display = "block";
+  document.getElementById("name-input").value = "";
+  streak = 0;
+}
 </script>
 </body>
 </html>
