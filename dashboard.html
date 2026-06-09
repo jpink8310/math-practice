@@ -47,23 +47,40 @@
     background: #fff; border-radius: 12px; padding: 16px 24px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.07); flex: 1; min-width: 140px;
   }
-  .summary-card .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-  .summary-card .value { font-size: 1.8rem; font-weight: 700; color: #6366f1; margin-top: 4px; }
+  .summary-card .label {
+    font-size: 0.8rem; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .summary-card .value {
+    font-size: 1.8rem; font-weight: 700; color: #6366f1; margin-top: 4px;
+  }
 </style>
 </head>
 <body>
 
 <h1>📊 Teacher Dashboard</h1>
-<p class="subtitle">Student performance overview — refreshes on load</p>
+<p class="subtitle">Student performance overview</p>
 
 <div class="summary">
-  <div class="summary-card"><div class="label">Students</div><div class="value" id="stat-students">—</div></div>
-  <div class="summary-card"><div class="label">Total Questions</div><div class="value" id="stat-attempted">—</div></div>
-  <div class="summary-card"><div class="label">Avg Accuracy</div><div class="value" id="stat-accuracy">—</div></div>
-  <div class="summary-card"><div class="label">Top Score</div><div class="value" id="stat-top">—</div></div>
+  <div class="summary-card">
+    <div class="label">Students</div>
+    <div class="value" id="stat-students">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Total Questions</div>
+    <div class="value" id="stat-attempted">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Avg Accuracy</div>
+    <div class="value" id="stat-accuracy">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Top Score</div>
+    <div class="value" id="stat-top">—</div>
+  </div>
 </div>
 
-<button class="refresh-btn" onclick="loadData()">Refresh</button>
+<button class="refresh-btn" id="refresh-btn">Refresh</button>
 
 <table>
   <thead>
@@ -102,7 +119,6 @@
     const tbody = document.getElementById("student-table");
     tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
-    // .once() instead of .on() so we don't stack duplicate listeners on refresh
     db.ref("students").once("value").then(snapshot => {
       tbody.innerHTML = "";
 
@@ -118,8 +134,9 @@
       const totalStudents  = students.length;
       const totalAttempted = students.reduce((s, x) => s + (x.attempted || 0), 0);
       const totalCorrect   = students.reduce((s, x) => s + (x.correct   || 0), 0);
-      const avgAccuracy    = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
-      const topScore       = students[0]?.points || 0;
+      const avgAccuracy    = totalAttempted > 0
+        ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+      const topScore = students[0]?.points || 0;
 
       document.getElementById("stat-students").textContent  = totalStudents;
       document.getElementById("stat-attempted").textContent = totalAttempted;
@@ -129,7 +146,8 @@
       tbody.innerHTML = students.map((s, i) => {
         const correct   = s.correct   || 0;
         const attempted = s.attempted || 0;
-        const pct       = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
+        const pct       = attempted > 0
+          ? Math.round((correct / attempted) * 100) : 0;
         const barClass  = pct >= 75 ? "" : pct >= 50 ? "mid" : "low";
 
         return `
@@ -147,12 +165,19 @@
             </td>
           </tr>`;
       }).join("");
+
     }).catch(err => {
-      tbody.innerHTML = `<tr><td colspan="6" class="no-data">Error: ${err.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="no-data">
+        Error loading data: ${err.message}
+      </td></tr>`;
     });
   }
 
-  loadData();
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("refresh-btn").addEventListener("click", loadData);
+    loadData();
+  });
 </script>
+
 </body>
 </html>
