@@ -93,7 +93,7 @@
       <th>Accuracy</th>
     </tr>
   </thead>
-  <tbody id="student-table">
+  <tbody id="teacher-student-table">
     <tr><td colspan="6" class="no-data">Loading...</td></tr>
   </tbody>
 </table>
@@ -116,7 +116,7 @@
   const db = firebase.database();
 
   function loadData() {
-    const tbody = document.getElementById("student-table");
+    const tbody = document.getElementById("teacher-student-table");
     tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
     db.ref("students").once("value").then(snapshot => {
