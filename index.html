@@ -67,11 +67,91 @@
   .lb-rank { width: 28px; color: #94a3b8; font-weight: 700; }
   .lb-name { flex: 1; padding: 0 8px; }
   .lb-pts { color: #6366f1; font-weight: 700; }
+
+ .layout {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.sidebar h2 {
+  font-size: 1.1rem;
+  color: #6366f1;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sidebar .lb-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+  font-size: 0.9rem;
+}
+
+.sidebar .lb-rank {
+  width: 24px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.sidebar .lb-name {
+  flex: 1;
+  padding: 0 6px;
+}
+
+.sidebar .lb-pts {
+  color: #6366f1;
+  font-weight: 700;
+}
 </style>
 </head>
 <body>
 
-<div class="card" id="app">
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR LEADERBOARD -->
+  <div class="sidebar">
+    <h2>🏆 Top 5</h2>
+    <div id="sidebar-leaderboard">
+      <p style="color:#94a3b8;text-align:center;">Loading...</p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="card" id="app"><body>
+
+<div class="layout">
+
+  <!-- SIDEBAR LEADERBOARD -->
+  <div class="sidebar">
+    <h2>🏆 Top 5</h2>
+    <div id="sidebar-leaderboard">
+      <p style="color:#94a3b8;text-align:center;">Loading...</p>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div class="card" id="app">
+     </div>
+</div>
 
   <!-- Login Screen -->
   <div id="login-screen">
@@ -317,6 +397,36 @@ const db = firebase.database();
     });
   }
 
+ function loadSidebarLeaderboard() {
+  db.ref("students")
+    .orderByChild("points")
+    .limitToLast(5)
+    .once("value")
+    .then(snapshot => {
+
+      const container = document.getElementById("sidebar-leaderboard");
+
+      if (!snapshot.exists()) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+        return;
+      }
+
+      const entries = [];
+      snapshot.forEach(child => entries.push(child.val()));
+
+      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
+
+      const medals = ["🥇", "🥈", "🥉"];
+
+      container.innerHTML = entries.map((s, i) => `
+        <div class="lb-row">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${s.name || "Unknown"}</span>
+          <span class="lb-pts">${s.points || 0}</span>
+        </div>
+      `).join("");
+    });
+}
   // ========== EVENT LISTENERS ==========
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("start-btn").addEventListener("click", startApp);
@@ -325,6 +435,7 @@ const db = firebase.database();
     document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
     document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
     loadLeaderboard();
+   loadSidebarLeaderboard();
   });
 </script>
 </body>
