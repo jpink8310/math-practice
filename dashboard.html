@@ -116,98 +116,74 @@
   const db = firebase.database();
 
   function loadData() {
-  const tbody = document.getElementById("student-table");
+    const tbody = document.getElementById("teacher-student-table");
+    tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
-  tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
+    db.ref("students").once("value").then(snapshot => {
+      tbody.innerHTML = "";
 
-  db.ref("students").once("value").then(snapshot => {
+      if (!snapshot.exists()) {
+        tbody.innerHTML = `<tr><td colspan="6" class="no-data">No student data yet</td></tr>`;
+        return;
+      }
 
-    if (!snapshot.exists()) {
-      tbody.innerHTML = `<tr><td colspan="6" class="no-data">No student data yet</td></tr>`;
-      return;
-    }
+      const students = [];
 
-    // Convert Firebase object → array
-    const students = [];
+snapshot.forEach(child => {
+  console.log("KEY:", child.key);
+  console.log("VALUE:", child.val());
 
-    snapshot.forEach(child => {
-      students.push({
+   students.push({
         id: child.key,
         ...child.val()
       });
-    });
+});
+      students.sort((a, b) => (b.points || 0) - (a.points || 0));
+     
+console.log("FINAL STUDENTS ARRAY:", students);
+console.log("STUDENTS LENGTH:", students.length);
+     
+      const totalStudents  = students.length;
+      const totalAttempted = students.reduce((s, x) => s + (x.attempted || 0), 0);
+      const totalCorrect   = students.reduce((s, x) => s + (x.correct   || 0), 0);
+      const avgAccuracy    = totalAttempted > 0
+        ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+      const topScore = students[0]?.points || 0;
 
-    // 🔥 SORT HIGHEST POINTS → LOWEST POINTS
-    students.sort((a, b) => (b.points || 0) - (a.points || 0));
+      document.getElementById("stat-students").textContent  = totalStudents;
+      document.getElementById("stat-attempted").textContent = totalAttempted;
+      document.getElementById("stat-accuracy").textContent  = avgAccuracy + "%";
+      document.getElementById("stat-top").textContent       = topScore;
 
-    // =====================
-    // SUMMARY STATS
-    // =====================
-    const totalStudents = students.length;
+      tbody.innerHTML = students.map((s, i) => {
+        const correct   = s.correct   || 0;
+        const attempted = s.attempted || 0;
+        const pct       = attempted > 0
+          ? Math.round((correct / attempted) * 100) : 0;
+        const barClass  = pct >= 75 ? "" : pct >= 50 ? "mid" : "low";
 
-    const totalAttempted = students.reduce(
-      (sum, s) => sum + (s.attempted || 0),
-      0
-    );
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${s.name || "Unknown"}</td>
+            <td><strong>${s.points || 0}</strong></td>
+            <td>${correct}</td>
+            <td>${attempted}</td>
+            <td>
+              <span class="acc-label">${pct}%</span>
+              <span class="accuracy-bar-wrap">
+                <span class="accuracy-bar ${barClass}" style="width:${pct}px"></span>
+              </span>
+            </td>
+          </tr>`;
+      }).join("");
 
-    const totalCorrect = students.reduce(
-      (sum, s) => sum + (s.correct || 0),
-      0
-    );
-
-    const avgAccuracy =
-      totalAttempted > 0
-        ? Math.round((totalCorrect / totalAttempted) * 100)
-        : 0;
-
-    const topScore = students[0]?.points || 0;
-
-    document.getElementById("stat-students").textContent = totalStudents;
-    document.getElementById("stat-attempted").textContent = totalAttempted;
-    document.getElementById("stat-accuracy").textContent = avgAccuracy + "%";
-    document.getElementById("stat-top").textContent = topScore;
-
-    // =====================
-    // BUILD TABLE
-    // =====================
-    tbody.innerHTML = students.map((s, i) => {
-
-      const correct = s.correct || 0;
-      const attempted = s.attempted || 0;
-
-      const pct =
-        attempted > 0
-          ? Math.round((correct / attempted) * 100)
-          : 0;
-
-      const barClass =
-        pct >= 75 ? "" : pct >= 50 ? "mid" : "low";
-
-      return `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${s.name || s.id || "Unknown"}</td>
-          <td><strong>${s.points || 0}</strong></td>
-          <td>${correct}</td>
-          <td>${attempted}</td>
-          <td>
-            <span class="acc-label">${pct}%</span>
-            <span class="accuracy-bar-wrap">
-              <span class="accuracy-bar ${barClass}" style="width:${pct}%"></span>
-            </span>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-  }).catch(err => {
-    tbody.innerHTML = `
-      <tr><td colspan="6" class="no-data">
+    }).catch(err => {
+      tbody.innerHTML = `<tr><td colspan="6" class="no-data">
         Error loading data: ${err.message}
-      </td></tr>
-    `;
-  });
-}
+      </td></tr>`;
+    });
+  }
 
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("refresh-btn").addEventListener("click", loadData);
@@ -217,3 +193,6 @@
 
 </body>
 </html>
+
+  console.log("KEY:", child.key);
+  console.log("VALUE:", child.val());
