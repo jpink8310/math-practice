@@ -41,11 +41,10 @@
   .correct { color: #16a34a; }
   .incorrect { color: #dc2626; }
   .streak { font-size: 0.95rem; color: #64748b; margin-bottom: 16px; }
-  select { background: #fff; }
-  .settings { display: flex; gap: 8px; margin-bottom: 16px; }
-  .settings select { flex: 1; }
-  .btn-secondary { background: #e2e8f0; color: #475569; }
+  .btn-secondary { background: #e2e8f0; color: #475569; border: none; }
   .btn-secondary:hover { background: #cbd5e1; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row button { flex: 1; }
   @keyframes pop {
     0% { transform: scale(0); opacity: 0; }
     80% { transform: scale(1.2); }
@@ -53,7 +52,7 @@
   }
   .celebration { animation: pop 0.4s ease-out; }
 
-  /* Leaderboard */
+  /* Leaderboard on login screen */
   .leaderboard { margin-top: 24px; text-align: left; }
   .leaderboard h2 { font-size: 1.1rem; color: #6366f1; margin-bottom: 12px; text-align: center; }
   .lb-row {
@@ -66,7 +65,26 @@
   .lb-row.bronze { background: #fdf4e7; font-weight: 600; }
   .lb-rank { width: 28px; color: #94a3b8; font-weight: 700; }
   .lb-name { flex: 1; padding: 0 8px; }
-  .lb-pts { color: #6366f1; font-weight: 700; }
+  .lb-pts  { color: #6366f1; font-weight: 700; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 100;
+    justify-content: center; align-items: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 16px; padding: 28px;
+    width: 100%; max-width: 420px; max-height: 80vh;
+    overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  }
+  .modal h2 { font-size: 1.3rem; color: #6366f1; margin-bottom: 16px; text-align: center; }
+  .modal-close {
+    width: 100%; margin-top: 16px; background: #e2e8f0;
+    color: #475569; border: none;
+  }
+  .modal-close:hover { background: #cbd5e1; }
 </style>
 </head>
 <body>
@@ -79,8 +97,6 @@
     <p style="margin-bottom:24px; color:#64748b;">Enter your name to start</p>
     <input type="text" id="name-input" placeholder="Your name" autocomplete="off">
     <button id="start-btn">Let's Go!</button>
-
-    <!-- Leaderboard on login screen -->
     <div class="leaderboard">
       <h2>🏆 Top 10</h2>
       <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
@@ -98,35 +114,47 @@
     <input type="number" id="answer-input" placeholder="Your answer" inputmode="numeric">
     <button id="submit-btn">Submit</button>
     <div class="streak" id="streak-display"></div>
-    <button class="btn-secondary" id="logout-btn">Change Student</button>
+    <div class="btn-row">
+      <button class="btn-secondary" id="leaderboard-btn">🏆 Leaderboard</button>
+      <button class="btn-secondary" id="logout-btn">Change Student</button>
+    </div>
   </div>
 
 </div>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- Leaderboard Modal -->
+<div class="modal-overlay" id="lb-modal">
+  <div class="modal">
+    <h2>🏆 Top 10</h2>
+    <div id="modal-leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
+    <button class="modal-close" id="modal-close-btn">Close</button>
+  </div>
+</div>
+
+<script src="firebase-app-compat.js"></script>
+<script src="firebase-database-compat.js"></script>
 
 <script>
-  // ========== FIREBASE CONFIG ==========
   const firebaseConfig = {
-  apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
-  authDomain: "student-math-practice.firebaseapp.com",
-  projectId: "student-math-practice",
-  storageBucket: "student-math-practice.firebasestorage.app",
-  messagingSenderId: "817731587245",
-  appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
+    authDomain: "student-math-practice.firebaseapp.com",
+    databaseURL: "[student-math-practice-default-rtdb.firebaseio.com](https://student-math-practice-default-rtdb.firebaseio.com)",
+    projectId: "student-math-practice",
+    storageBucket: "student-math-practice.firebasestorage.app",
+    messagingSenderId: "817731587245",
+    appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
   // ========== STATE ==========
   let studentName = "";
-  let studentKey = "";
-  let points = 0;
-  let streak = 0;
+  let studentKey  = "";
+  let points      = 0;
+  let streak      = 0;
   let currentAnswer = 0;
-  let answered = false;
+  let answered    = false;
 
   // ========== HELPERS ==========
   function randInt(min, max) {
@@ -138,44 +166,36 @@ const db = firebase.database();
     const a = randInt(1, 12), b = randInt(1, 12);
     return { q: `What is ${a} x ${b}?`, a: a * b };
   }
-
   function twoDigitOneDigit() {
     const a = randInt(10, 99), b = randInt(2, 9);
     return { q: `What is ${a} x ${b}?`, a: a * b };
   }
-
-  function twoDigitTwoDigit() {
+  function twoDigitTwoDigitMultiply() {
     const a = randInt(10, 99), b = randInt(10, 99);
     return { q: `What is ${a} x ${b}?`, a: a * b };
   }
-
   function divisionQuestion() {
     const answer = randInt(2, 50), divisor = randInt(2, 12);
     return { q: `What is ${answer * divisor} / ${divisor}?`, a: answer };
   }
-
   function twoDigitAddition() {
     const a = randInt(10, 99), b = randInt(10, 99);
     return { q: `What is ${a} + ${b}?`, a: a + b };
   }
-
   function twoDigitSubtraction() {
     const a = randInt(10, 99), b = randInt(10, 99);
     const big = Math.max(a, b), small = Math.min(a, b);
     return { q: `What is ${big} - ${small}?`, a: big - small };
   }
-
   function threeDigitAddition() {
     const a = randInt(100, 999), b = randInt(100, 999);
     return { q: `What is ${a} + ${b}?`, a: a + b };
   }
-
   function threeDigitSubtraction() {
     const a = randInt(100, 999), b = randInt(100, 999);
     const big = Math.max(a, b), small = Math.min(a, b);
     return { q: `What is ${big} - ${small}?`, a: big - small };
   }
-
   function roundingQuestion() {
     const number = +(Math.random() * 100).toFixed(3);
     if (Math.random() < 0.5) {
@@ -187,7 +207,7 @@ const db = firebase.database();
   const generators = [
     multiplicationFact,
     twoDigitOneDigit,
-    twoDigitTwoDigit,
+    twoDigitTwoDigitMultiply,
     divisionQuestion,
     twoDigitAddition,
     twoDigitSubtraction,
@@ -196,16 +216,44 @@ const db = firebase.database();
     roundingQuestion
   ];
 
+  // ========== LEADERBOARD ==========
+  function renderLeaderboard(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Loading...</p>";
+
+    db.ref("students").once("value").then(snapshot => {
+      if (!snapshot.exists()) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+        return;
+      }
+
+      const entries = [];
+      snapshot.forEach(child => entries.push(child.val()));
+      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
+      const top10 = entries.slice(0, 10);
+
+      const medals   = ["🥇", "🥈", "🥉"];
+      const rowClass = ["gold", "silver", "bronze"];
+
+      container.innerHTML = top10.map((s, i) => `
+        <div class="lb-row ${rowClass[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${s.name || "Unknown"}</span>
+          <span class="lb-pts">${s.points || 0} pts</span>
+        </div>
+      `).join("");
+    });
+  }
+
   // ========== APP FUNCTIONS ==========
   function generateQuestion() {
     answered = false;
     document.getElementById("feedback").textContent = "";
     document.getElementById("answer-input").value = "";
     document.getElementById("answer-input").focus();
-
-    const questionObj = generators[randInt(0, generators.length - 1)]();
-    currentAnswer = questionObj.a;
-    document.getElementById("question-text").textContent = questionObj.q;
+    const q = generators[randInt(0, generators.length - 1)]();
+    currentAnswer = q.a;
+    document.getElementById("question-text").textContent = q.q;
   }
 
   async function startApp() {
@@ -213,7 +261,7 @@ const db = firebase.database();
     if (!name) return;
 
     studentName = name;
-    studentKey = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    studentKey  = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
     try {
       const snapshot = await db.ref("students/" + studentKey).once("value");
@@ -243,10 +291,9 @@ const db = firebase.database();
     if (input === "") return;
 
     const userAnswer = parseFloat(input);
-    const feedback = document.getElementById("feedback");
+    const feedback   = document.getElementById("feedback");
     answered = true;
 
-    // Read current stats
     const snap = await db.ref("students/" + studentKey).once("value");
     const data = snap.val() || {};
     const prevCorrect   = data.correct   || 0;
@@ -254,9 +301,8 @@ const db = firebase.database();
 
     if (userAnswer === currentAnswer) {
       streak++;
-      const award = 1;
       const bonus = streak >= 5 ? 1 : 0;
-      const total = award + bonus;
+      const total = 1 + bonus;
       points += total;
 
       feedback.className = "feedback correct celebration";
@@ -291,30 +337,7 @@ const db = firebase.database();
     document.getElementById("quiz-screen").style.display = "none";
     document.getElementById("login-screen").style.display = "block";
     document.getElementById("name-input").value = "";
-    loadLeaderboard();
-  }
-
-  // ========== LEADERBOARD ==========
-  function loadLeaderboard() {
-    db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
-      const list = document.getElementById("leaderboard-list");
-      if (!snapshot.exists()) { list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>"; return; }
-
-      const entries = [];
-      snapshot.forEach(child => entries.push(child.val()));
-      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-      const medals = ["🥇", "🥈", "🥉"];
-      const rowClass = ["gold", "silver", "bronze"];
-
-      list.innerHTML = entries.map((s, i) => `
-        <div class="lb-row ${rowClass[i] || ''}">
-          <span class="lb-rank">${medals[i] || (i + 1)}</span>
-          <span class="lb-name">${s.name || "Unknown"}</span>
-          <span class="lb-pts">${s.points || 0} pts</span>
-        </div>
-      `).join("");
-    });
+    renderLeaderboard("leaderboard-list");
   }
 
   // ========== EVENT LISTENERS ==========
@@ -322,9 +345,30 @@ const db = firebase.database();
     document.getElementById("start-btn").addEventListener("click", startApp);
     document.getElementById("submit-btn").addEventListener("click", checkAnswer);
     document.getElementById("logout-btn").addEventListener("click", logout);
-    document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
-    document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-    loadLeaderboard();
+
+    document.getElementById("name-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") startApp();
+    });
+    document.getElementById("answer-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") checkAnswer();
+    });
+
+    // Leaderboard modal
+    document.getElementById("leaderboard-btn").addEventListener("click", () => {
+      document.getElementById("lb-modal").classList.add("open");
+      renderLeaderboard("modal-leaderboard-list");
+    });
+    document.getElementById("modal-close-btn").addEventListener("click", () => {
+      document.getElementById("lb-modal").classList.remove("open");
+    });
+    // Close modal if tapping outside
+    document.getElementById("lb-modal").addEventListener("click", e => {
+      if (e.target === document.getElementById("lb-modal")) {
+        document.getElementById("lb-modal").classList.remove("open");
+      }
+    });
+
+    renderLeaderboard("leaderboard-list");
   });
 </script>
 </body>
