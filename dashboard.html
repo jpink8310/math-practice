@@ -106,14 +106,19 @@ const db = firebase.database();
     tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
     db.ref("students").orderByChild("points").on("value", snapshot => {
-      if (!snapshot.exists()) {
-        tbody.innerHTML = `<tr><td colspan="6" class="no-data">No student data yet</td></tr>`;
-        return;
-      }
+  const tbody = document.getElementById("student-table");
 
-      const students = [];
-      snapshot.forEach(child => students.push(child.val()));
-      students.sort((a, b) => (b.points || 0) - (a.points || 0));
+  tbody.innerHTML = ""; // <-- FIX #2 goes here (table reset)
+
+  if (!snapshot.exists()) {
+    tbody.innerHTML = `<tr><td colspan="6" class="no-data">No student data yet</td></tr>`;
+    return;
+  }
+
+  const students = [];
+  snapshot.forEach(child => students.push(child.val()));
+
+  students.sort((a, b) => (b.points || 0) - (a.points || 0));
 
       // Summary stats
       const totalStudents  = students.length;
