@@ -119,7 +119,7 @@
     const tbody = document.getElementById("teacher-student-table");
     tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
-    db.ref("students").once("value").then(snapshot => {
+    db.ref("students/student").once("value").then(snapshot => {
       tbody.innerHTML = "";
 
       if (!snapshot.exists()) {
