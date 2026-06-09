@@ -105,7 +105,7 @@ const db = firebase.database();
     const tbody = document.getElementById("student-table");
     tbody.innerHTML = `<tr><td colspan="6" class="no-data">Loading...</td></tr>`;
 
-    db.ref("students").orderByChild("points").once("value").then(snapshot => {
+    db.ref("students").orderByChild("points")..on("value", snapshot => {
       if (!snapshot.exists()) {
         tbody.innerHTML = `<tr><td colspan="6" class="no-data">No student data yet</td></tr>`;
         return;
