@@ -135,7 +135,9 @@ snapshot.forEach(child => {
 
   students.push(child.val());
 });
-
+console.log("FINAL STUDENTS ARRAY:", students);
+console.log("STUDENTS LENGTH:", students.length);
+     
       const totalStudents  = students.length;
       const totalAttempted = students.reduce((s, x) => s + (x.attempted || 0), 0);
       const totalCorrect   = students.reduce((s, x) => s + (x.correct   || 0), 0);
