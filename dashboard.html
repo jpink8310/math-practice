@@ -128,8 +128,13 @@
       }
 
       const students = [];
-      snapshot.forEach(child => students.push(child.val()));
-      students.sort((a, b) => (b.points || 0) - (a.points || 0));
+
+snapshot.forEach(child => {
+  console.log("KEY:", child.key);
+  console.log("VALUE:", child.val());
+
+  students.push(child.val());
+});
 
       const totalStudents  = students.length;
       const totalAttempted = students.reduce((s, x) => s + (x.attempted || 0), 0);
