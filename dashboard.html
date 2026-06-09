@@ -130,10 +130,12 @@
       const students = [];
 
 snapshot.forEach(child => {
-  console.log("KEY:", child.key);
-  console.log("VALUE:", child.val());
-
-  students.push(child.val());
+  students.push({
+    id: child.key,
+    ...child.val()
+  });
+});
+     students.sort((a, b) => (b.points || 0) - (a.points || 0));
 });
 console.log("FINAL STUDENTS ARRAY:", students);
 console.log("STUDENTS LENGTH:", students.length);
