@@ -335,39 +335,28 @@ const db = firebase.database();
   }
 
   // ========== LEADERBOARD ==========
-  function loadLeaderboard() {
-  db.ref("students").once("value").then(snapshot => {
+ function loadLeaderboard() {
+    db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
+      const list = document.getElementById("leaderboard-list");
+      if (!snapshot.exists()) { list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>"; return; }
 
-    console.log("CHILD COUNT:", snapshot.numChildren());
-    console.log("RAW DATA:", snapshot.val());
+      const entries = [];
+      snapshot.forEach(child => entries.push(child.val()));
+      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
 
-    const entries = [];
+      const medals = ["🥇", "🥈", "🥉"];
+      const rowClass = ["gold", "silver", "bronze"];
 
-    snapshot.forEach(child => {
-      console.log("STUDENT:", child.key, child.val());
-      entries.push({
-        id: child.key,
-        ...child.val()
-      });
+      list.innerHTML = entries.map((s, i) => `
+        <div class="lb-row ${rowClass[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${s.name || "Unknown"}</span>
+          <span class="lb-pts">${s.points || 0} pts</span>
+        </div>
+      `).join("");
     });
+  }
 
-    console.log("ENTRIES ARRAY:", entries);
-
-    entries.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-    console.log("SORTED ENTRIES:", entries);
-
-    const list = document.getElementById("leaderboard-list");
-
-    list.innerHTML = entries.map((s, i) => `
-      <div class="lb-row">
-        <span class="lb-rank">${i + 1}</span>
-        <span class="lb-name">${s.name || s.id}</span>
-        <span class="lb-pts">${s.points || 0}</span>
-      </div>
-    `).join("");
-  });
-}
 function loadSidebarLeaderboard() {
   db.ref("students")
     .orderByChild("points")
