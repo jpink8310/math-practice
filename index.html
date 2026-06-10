@@ -52,57 +52,6 @@
     100% { transform: scale(1); opacity: 1; }
   }
   .celebration { animation: pop 0.4s ease-out; }
- .layout {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 220px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-  height: fit-content;
-  position: sticky;
-  top: 20px;
-}
-
-.sidebar h2 {
-  font-size: 1.1rem;
-  color: #6366f1;
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-.sidebar .lb-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  background: #f8fafc;
-  font-size: 0.9rem;
-}
-
-.sidebar .lb-rank {
-  width: 24px;
-  font-weight: 700;
-  color: #94a3b8;
-}
-
-.sidebar .lb-name {
-  flex: 1;
-  padding: 0 6px;
-}
-
-.sidebar .lb-pts {
-  color: #6366f1;
-  font-weight: 700;
-}
 
   /* Leaderboard */
   .leaderboard { margin-top: 24px; text-align: left; }
@@ -118,11 +67,56 @@
   .lb-rank { width: 28px; color: #94a3b8; font-weight: 700; }
   .lb-name { flex: 1; padding: 0 8px; }
   .lb-pts { color: #6366f1; font-weight: 700; }
+ .layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 240px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+
+.sidebar h2 {
+  text-align: center;
+  color: #6366f1;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-width: 480px;
+    order: 2;
+  }
+
+  .card {
+    order: 1;
+  }
+}
 </style>
 </head>
 <body>
 
-<div class="card" id="app">
+<div class="layout">
+
+  <div class="sidebar">
+    <h2>🏆 Top 5 Students</h2>
+    <div id="sidebar-leaderboard">
+      <p style="color:#94a3b8;text-align:center;">Loading...</p>
+    </div>
+  </div>
+
+  <div class="card" id="app">
 
   <!-- Login Screen -->
   <div id="login-screen">
@@ -131,11 +125,10 @@
     <input type="text" id="name-input" placeholder="Your name" autocomplete="off">
     <button id="start-btn">Let's Go!</button>
 
-    <!-- SIDEBAR LEADERBOARD -->
-  <div class="sidebar">
-    <h2>🏆 Top 5</h2>
-    <div id="sidebar-leaderboard">
-      <p style="color:#94a3b8;text-align:center;">Loading...</p>
+    <!-- Leaderboard on login screen -->
+    <div class="leaderboard">
+      <h2>🏆 Top 10</h2>
+      <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
     </div>
   </div>
 
@@ -152,6 +145,8 @@
     <div class="streak" id="streak-display"></div>
     <button class="btn-secondary" id="logout-btn">Change Student</button>
   </div>
+
+</div>
 
 </div>
 
@@ -347,32 +342,28 @@ const db = firebase.database();
   }
 
   // ========== LEADERBOARD ==========
-function loadLeaderboard() {
-  db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
-    const list = document.getElementById("leaderboard-list");
+  function loadLeaderboard() {
+    db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
+      const list = document.getElementById("leaderboard-list");
+      if (!snapshot.exists()) { list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>"; return; }
 
-    if (!snapshot.exists()) {
-      list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
-      return;
-    }
+      const entries = [];
+      snapshot.forEach(child => entries.push(child.val()));
+      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
 
-    const entries = [];
-    snapshot.forEach(child => entries.push(child.val()));
-    entries.sort((a, b) => (b.points || 0) - (a.points || 0));
+      const medals = ["🥇", "🥈", "🥉"];
+      const rowClass = ["gold", "silver", "bronze"];
 
-    const medals = ["🥇", "🥈", "🥉"];
-    const rowClass = ["gold", "silver", "bronze"];
-
-    list.innerHTML = entries.map((s, i) => `
-      <div class="lb-row ${rowClass[i] || ''}">
-        <span class="lb-rank">${medals[i] || (i + 1)}</span>
-        <span class="lb-name">${s.name || "Unknown"}</span>
-        <span class="lb-pts">${s.points || 0} pts</span>
-      </div>
-    `).join("");
-  });
-}
- function loadSidebarLeaderboard() {
+      list.innerHTML = entries.map((s, i) => `
+        <div class="lb-row ${rowClass[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${s.name || "Unknown"}</span>
+          <span class="lb-pts">${s.points || 0} pts</span>
+        </div>
+      `).join("");
+    });
+  }
+function loadSidebarLeaderboard() {
   db.ref("students")
     .orderByChild("points")
     .limitToLast(5)
@@ -402,7 +393,6 @@ function loadLeaderboard() {
       `).join("");
     });
 }
-
   // ========== EVENT LISTENERS ==========
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("start-btn").addEventListener("click", startApp);
