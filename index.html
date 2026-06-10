@@ -347,7 +347,32 @@ const db = firebase.database();
   }
 
   // ========== LEADERBOARD ==========
-  function loadSidebarLeaderboard() {
+function loadLeaderboard() {
+  db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
+    const list = document.getElementById("leaderboard-list");
+
+    if (!snapshot.exists()) {
+      list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+      return;
+    }
+
+    const entries = [];
+    snapshot.forEach(child => entries.push(child.val()));
+    entries.sort((a, b) => (b.points || 0) - (a.points || 0));
+
+    const medals = ["🥇", "🥈", "🥉"];
+    const rowClass = ["gold", "silver", "bronze"];
+
+    list.innerHTML = entries.map((s, i) => `
+      <div class="lb-row ${rowClass[i] || ''}">
+        <span class="lb-rank">${medals[i] || (i + 1)}</span>
+        <span class="lb-name">${s.name || "Unknown"}</span>
+        <span class="lb-pts">${s.points || 0} pts</span>
+      </div>
+    `).join("");
+  });
+}
+ function loadSidebarLeaderboard() {
   db.ref("students")
     .orderByChild("points")
     .limitToLast(5)
