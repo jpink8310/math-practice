@@ -52,6 +52,57 @@
     100% { transform: scale(1); opacity: 1; }
   }
   .celebration { animation: pop 0.4s ease-out; }
+ .layout {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.sidebar h2 {
+  font-size: 1.1rem;
+  color: #6366f1;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.sidebar .lb-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+  font-size: 0.9rem;
+}
+
+.sidebar .lb-rank {
+  width: 24px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.sidebar .lb-name {
+  flex: 1;
+  padding: 0 6px;
+}
+
+.sidebar .lb-pts {
+  color: #6366f1;
+  font-weight: 700;
+}
 
   /* Leaderboard */
   .leaderboard { margin-top: 24px; text-align: left; }
@@ -80,10 +131,11 @@
     <input type="text" id="name-input" placeholder="Your name" autocomplete="off">
     <button id="start-btn">Let's Go!</button>
 
-    <!-- Leaderboard on login screen -->
-    <div class="leaderboard">
-      <h2>🏆 Top 10</h2>
-      <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
+    <!-- SIDEBAR LEADERBOARD -->
+  <div class="sidebar">
+    <h2>🏆 Top 5</h2>
+    <div id="sidebar-leaderboard">
+      <p style="color:#94a3b8;text-align:center;">Loading...</p>
     </div>
   </div>
 
@@ -295,27 +347,36 @@ const db = firebase.database();
   }
 
   // ========== LEADERBOARD ==========
-  function loadLeaderboard() {
-    db.ref("students").orderByChild("points").limitToLast(10).once("value").then(snapshot => {
-      const list = document.getElementById("leaderboard-list");
-      if (!snapshot.exists()) { list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>"; return; }
+  function loadSidebarLeaderboard() {
+  db.ref("students")
+    .orderByChild("points")
+    .limitToLast(5)
+    .once("value")
+    .then(snapshot => {
+
+      const container = document.getElementById("sidebar-leaderboard");
+
+      if (!snapshot.exists()) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+        return;
+      }
 
       const entries = [];
       snapshot.forEach(child => entries.push(child.val()));
+
       entries.sort((a, b) => (b.points || 0) - (a.points || 0));
 
       const medals = ["🥇", "🥈", "🥉"];
-      const rowClass = ["gold", "silver", "bronze"];
 
-      list.innerHTML = entries.map((s, i) => `
-        <div class="lb-row ${rowClass[i] || ''}">
+      container.innerHTML = entries.map((s, i) => `
+        <div class="lb-row">
           <span class="lb-rank">${medals[i] || (i + 1)}</span>
           <span class="lb-name">${s.name || "Unknown"}</span>
-          <span class="lb-pts">${s.points || 0} pts</span>
+          <span class="lb-pts">${s.points || 0}</span>
         </div>
       `).join("");
     });
-  }
+}
 
   // ========== EVENT LISTENERS ==========
   document.addEventListener("DOMContentLoaded", () => {
@@ -325,6 +386,7 @@ const db = firebase.database();
     document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
     document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
     loadLeaderboard();
+   loadSidebarLeaderboard();
   });
 </script>
 </body>
