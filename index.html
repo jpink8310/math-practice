@@ -178,7 +178,7 @@
 
   function roundingQuestion() {
     const number = +(Math.random() * 100).toFixed(3);
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.49) {
       return { q: `Round ${number} to the nearest tenth`, a: Number(number.toFixed(1)) };
     }
     return { q: `Round ${number} to the nearest hundredth`, a: Number(number.toFixed(2)) };
