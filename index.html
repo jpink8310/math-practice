@@ -95,7 +95,6 @@
     <button id="submit-btn">Submit</button>
     <div class="streak" id="streak-display"></div>
     <button class="btn-secondary" id="logout-btn">Change Student</button>
-    <!-- Leaderboard on quiz screen — separate ID from login screen -->
     <div class="leaderboard">
       <h2>🏆 Top 10</h2>
       <div id="quiz-leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
@@ -104,31 +103,30 @@
 
 </div>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
 <script>
   // ========== FIREBASE CONFIG ==========
-   const firebaseConfig = {
+  const firebaseConfig = {
   apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
   authDomain: "student-math-practice.firebaseapp.com",
   projectId: "student-math-practice",
   storageBucket: "student-math-practice.firebasestorage.app",
   messagingSenderId: "817731587245",
   appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
-  };
+};
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
   // ========== STATE ==========
-  let studentName = "";
-  let studentKey  = "";
-  let points      = 0;
-  let streak      = 0;
+  let studentName   = "";
+  let studentKey    = "";
+  let points        = 0;
+  let streak        = 0;
   let currentAnswer = 0;
-  let answered    = false;
+  let answered      = false;
 
   // ========== HELPERS ==========
   function randInt(min, max) {
@@ -186,65 +184,68 @@
     return { q: `Round ${number} to the nearest hundredth`, a: Number(number.toFixed(2)) };
   }
 
-  // ========== NEW QUESTION TYPES ==========
-
   function comparingDecimals() {
-    // Generate two decimals that are never equal
     let a, b;
     do {
       a = +(Math.random() * 10).toFixed(2);
       b = +(Math.random() * 10).toFixed(2);
     } while (a === b);
-    const greater = Math.max(a, b);
     return {
       q: `Which is greater: ${a} or ${b}? (type the greater number)`,
-      a: greater
+      a: Math.max(a, b)
     };
   }
 
   function placeValueQuestion() {
-    // Build a number with up to 3 decimal places
-    const whole = randInt(10, 999);
-    const decimal = randInt(100, 999);
-    const number = parseFloat(`${whole}.${decimal}`);
-    const digits = number.toString().replace(".", "");
-    const dotPos = number.toString().indexOf(".");
+    // Build number explicitly so positions are unambiguous
+    // whole part: 10–999, decimal part: exactly 3 digits
+    const whole   = randInt(10, 999);
+    const tenths_digit      = randInt(0, 9);
+    const hundredths_digit  = randInt(0, 9);
+    const thousandths_digit = randInt(0, 9);
 
-    const places = [
-      { name: "tenths",        index: dotPos + 1 },
-      { name: "hundredths",    index: dotPos + 2 },
-      { name: "thousandths",   index: dotPos + 3 },
-      { name: "ones",          index: dotPos - 1 },
-      { name: "tens",          index: dotPos - 2 },
-      { name: "hundreds",      index: dotPos - 3 },
-    ].filter(p => p.index >= 0 && p.index < digits.length);
+    const numStr = `${whole}.${tenths_digit}${hundredths_digit}${thousandths_digit}`;
+    const number = parseFloat(numStr);
 
-    const chosen = places[randInt(0, places.length - 1)];
-    const answer = Number(digits[chosen.index]);
+    // Whole-part places — read digits from the whole number string
+    const wholeStr = String(whole);
+    const onesDigit     = Number(wholeStr[wholeStr.length - 1]);
+    const tensDigit     = wholeStr.length >= 2 ? Number(wholeStr[wholeStr.length - 2]) : null;
+    const hundredsDigit = wholeStr.length >= 3 ? Number(wholeStr[wholeStr.length - 3]) : null;
 
+    // Build pool of valid place options
+    const options = [
+      { name: "tenths",      answer: tenths_digit },
+      { name: "hundredths",  answer: hundredths_digit },
+      { name: "thousandths", answer: thousandths_digit },
+      { name: "ones",        answer: onesDigit },
+      { name: "tens",        answer: tensDigit },
+    ];
+    if (hundredsDigit !== null) {
+      options.push({ name: "hundreds", answer: hundredsDigit });
+    }
+
+    const chosen = options[randInt(0, options.length - 1)];
     return {
-      q: `In the number ${number}, what digit is in the ${chosen.name} place?`,
-      a: answer
+      q: `In the number ${numStr}, what digit is in the ${chosen.name} place?`,
+      a: chosen.answer
     };
   }
 
   function measurementConversion() {
     const conversions = [
-      // length
-      { q: (n) => `${n * 100} cm = ? m`,       a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10] },
-      { q: (n) => `${n} m = ? cm`,              a: (n) => n * 100, ns: [1,2,3,4,5,6,7,8,9,10] },
-      { q: (n) => `${n * 1000} m = ? km`,       a: (n) => n,      ns: [1,2,3,4,5] },
-      { q: (n) => `${n} km = ? m`,              a: (n) => n * 1000, ns: [1,2,3,4,5] },
-      { q: (n) => `${n * 10} mm = ? cm`,        a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10] },
-      { q: (n) => `${n} cm = ? mm`,             a: (n) => n * 10,  ns: [1,2,3,4,5,6,7,8,9,10] },
-      // mass
-      { q: (n) => `${n * 1000} g = ? kg`,       a: (n) => n,      ns: [1,2,3,4,5] },
-      { q: (n) => `${n} kg = ? g`,              a: (n) => n * 1000, ns: [1,2,3,4,5] },
-      // time
-      { q: (n) => `${n * 60} seconds = ? minutes`, a: (n) => n,   ns: [1,2,3,4,5,6,7,8,9,10] },
-      { q: (n) => `${n} minutes = ? seconds`,   a: (n) => n * 60,  ns: [1,2,3,4,5,6,7,8,9,10] },
-      { q: (n) => `${n * 60} minutes = ? hours`,a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
-      { q: (n) => `${n} hours = ? minutes`,     a: (n) => n * 60,  ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
+      { q: (n) => `${n * 100} cm = ? m`,           a: (n) => n,        ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} m = ? cm`,                  a: (n) => n * 100,  ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n * 1000} m = ? km`,           a: (n) => n,        ns: [1,2,3,4,5] },
+      { q: (n) => `${n} km = ? m`,                  a: (n) => n * 1000, ns: [1,2,3,4,5] },
+      { q: (n) => `${n * 10} mm = ? cm`,            a: (n) => n,        ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} cm = ? mm`,                 a: (n) => n * 10,   ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n * 1000} g = ? kg`,           a: (n) => n,        ns: [1,2,3,4,5] },
+      { q: (n) => `${n} kg = ? g`,                  a: (n) => n * 1000, ns: [1,2,3,4,5] },
+      { q: (n) => `${n * 60} seconds = ? minutes`,  a: (n) => n,        ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} minutes = ? seconds`,       a: (n) => n * 60,   ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n * 60} minutes = ? hours`,    a: (n) => n,        ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
+      { q: (n) => `${n} hours = ? minutes`,         a: (n) => n * 60,   ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
     ];
     const c = conversions[randInt(0, conversions.length - 1)];
     const n = c.ns[randInt(0, c.ns.length - 1)];
@@ -252,7 +253,6 @@
   }
 
   function solveForX() {
-    // Form: ax + b = c  →  x = (c - b) / a
     const a = randInt(1, 10);
     const x = randInt(1, 20);
     const b = randInt(0, 20);
@@ -280,19 +280,23 @@
   ];
 
   // ========== LEADERBOARD ==========
+  // Reverted to original working logic — reads all students,
+  // sorts by points, renders top 10 into whichever container ID is passed
   function loadLeaderboard(containerId) {
     db.ref("students").once("value").then(snapshot => {
-      const container = document.getElementById(containerId);
+      const list = document.getElementById(containerId);
       if (!snapshot.exists()) {
-        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+        list.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
         return;
       }
       const entries = [];
-      snapshot.forEach(child => entries.push({ id: child.key, ...child.val() }));
+      snapshot.forEach(child => {
+        entries.push({ id: child.key, ...child.val() });
+      });
       entries.sort((a, b) => (b.points || 0) - (a.points || 0));
       const medals   = ["🥇", "🥈", "🥉"];
       const rowClass = ["gold", "silver", "bronze"];
-      container.innerHTML = entries.slice(0, 10).map((s, i) => `
+      list.innerHTML = entries.slice(0, 10).map((s, i) => `
         <div class="lb-row ${rowClass[i] || ''}">
           <span class="lb-rank">${medals[i] || (i + 1)}</span>
           <span class="lb-name">${s.name || s.id}</span>
@@ -316,10 +320,8 @@
   async function startApp() {
     const name = document.getElementById("name-input").value.trim();
     if (!name) return;
-
     studentName = name;
     studentKey  = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
-
     try {
       const snapshot = await db.ref("students/" + studentKey).once("value");
       if (snapshot.exists()) {
@@ -343,10 +345,8 @@
 
   async function checkAnswer() {
     if (answered) { generateQuestion(); return; }
-
     const input = document.getElementById("answer-input").value.trim();
     if (input === "") return;
-
     const userAnswer = parseFloat(input);
     const feedback   = document.getElementById("feedback");
     answered = true;
@@ -358,23 +358,19 @@
 
     if (userAnswer === currentAnswer) {
       streak++;
-      const award = 1;
       const bonus = streak >= 5 ? 1 : 0;
-      const total = award + bonus;
+      const total = 1 + bonus;
       points += total;
-
       feedback.className = "feedback correct celebration";
       let msg = `Correct! +${total} point${total > 1 ? "s" : ""}`;
       if (bonus) msg += " (streak bonus!)";
       feedback.textContent = msg;
-
       await db.ref("students/" + studentKey).update({
         points:    points,
         correct:   prevCorrect + 1,
         attempted: prevAttempted + 1
       });
       document.getElementById("points").textContent = points;
-      // Refresh quiz leaderboard after each correct answer
       loadLeaderboard("quiz-leaderboard-list");
     } else {
       streak = 0;
