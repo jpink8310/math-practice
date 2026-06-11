@@ -52,59 +52,6 @@
     100% { transform: scale(1); opacity: 1; }
   }
   .celebration { animation: pop 0.4s ease-out; }
-
-  /* Leaderboard */
- .layout {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 220px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-  height: fit-content;
-  position: sticky;
-  top: 20px;
-}
-
-.sidebar h2 {
-  font-size: 1.1rem;
-  color: #6366f1;
-  margin-bottom: 12px;
-  text-align: center;
-}
-
-.sidebar .lb-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 8px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  background: #f8fafc;
-  font-size: 0.9rem;
-}
-
-.sidebar .lb-rank {
-  width: 24px;
-  font-weight: 700;
-  color: #94a3b8;
-}
-
-.sidebar .lb-name {
-  flex: 1;
-  padding: 0 6px;
-}
-
-.sidebar .lb-pts {
-  color: #6366f1;
-  font-weight: 700;
-}
   .leaderboard { margin-top: 24px; text-align: left; }
   .leaderboard h2 { font-size: 1.1rem; color: #6366f1; margin-bottom: 12px; text-align: center; }
   .lb-row {
@@ -122,10 +69,7 @@
 </head>
 <body>
 
-<div class="layout">
-
-  <!-- MAIN APP -->
-  <div class="card" id="app">
+<div class="card" id="app">
 
   <!-- Login Screen -->
   <div id="login-screen">
@@ -133,8 +77,6 @@
     <p style="margin-bottom:24px; color:#64748b;">Enter your name to start</p>
     <input type="text" id="name-input" placeholder="Your name" autocomplete="off">
     <button id="start-btn">Let's Go!</button>
-
-    <!-- Leaderboard on login screen -->
     <div class="leaderboard">
       <h2>🏆 Top 10</h2>
       <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
@@ -149,43 +91,45 @@
     </div>
     <div class="question" id="question-text">Loading...</div>
     <div class="feedback" id="feedback"></div>
-    <input type="number" id="answer-input" placeholder="Your answer" inputmode="numeric">
+    <input type="number" id="answer-input" placeholder="Your answer" inputmode="decimal">
     <button id="submit-btn">Submit</button>
     <div class="streak" id="streak-display"></div>
     <button class="btn-secondary" id="logout-btn">Change Student</button>
-   <div class="leaderboard">
+    <!-- Leaderboard on quiz screen — separate ID from login screen -->
+    <div class="leaderboard">
       <h2>🏆 Top 10</h2>
-      <div id="leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
+      <div id="quiz-leaderboard-list"><p style="color:#94a3b8;text-align:center;">Loading...</p></div>
     </div>
-  </div>
   </div>
 
 </div>
 
 <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js)"></script>
+<script src="[gstatic.com](https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js)"></script>
 
 <script>
   // ========== FIREBASE CONFIG ==========
   const firebaseConfig = {
-  apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
-  authDomain: "student-math-practice.firebaseapp.com",
-  projectId: "student-math-practice",
-  storageBucket: "student-math-practice.firebasestorage.app",
-  messagingSenderId: "817731587245",
-  appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    apiKey: "AIzaSyAzvhvP1xYTvoW1SPURneDwpdCYj_NXAFk",
+    authDomain: "student-math-practice.firebaseapp.com",
+    databaseURL: "[student-math-practice-default-rtdb.firebaseio.com](https://student-math-practice-default-rtdb.firebaseio.com)",
+    projectId: "student-math-practice",
+    storageBucket: "student-math-practice.firebasestorage.app",
+    messagingSenderId: "817731587245",
+    appId: "1:817731587245:web:13aa1c244f7ce18e0cca24"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
   // ========== STATE ==========
   let studentName = "";
-  let studentKey = "";
-  let points = 0;
-  let streak = 0;
+  let studentKey  = "";
+  let points      = 0;
+  let streak      = 0;
   let currentAnswer = 0;
-  let answered = false;
+  let answered    = false;
 
   // ========== HELPERS ==========
   function randInt(min, max) {
@@ -243,6 +187,83 @@ const db = firebase.database();
     return { q: `Round ${number} to the nearest hundredth`, a: Number(number.toFixed(2)) };
   }
 
+  // ========== NEW QUESTION TYPES ==========
+
+  function comparingDecimals() {
+    // Generate two decimals that are never equal
+    let a, b;
+    do {
+      a = +(Math.random() * 10).toFixed(2);
+      b = +(Math.random() * 10).toFixed(2);
+    } while (a === b);
+    const greater = Math.max(a, b);
+    return {
+      q: `Which is greater: ${a} or ${b}? (type the greater number)`,
+      a: greater
+    };
+  }
+
+  function placeValueQuestion() {
+    // Build a number with up to 3 decimal places
+    const whole = randInt(10, 999);
+    const decimal = randInt(100, 999);
+    const number = parseFloat(`${whole}.${decimal}`);
+    const digits = number.toString().replace(".", "");
+    const dotPos = number.toString().indexOf(".");
+
+    const places = [
+      { name: "tenths",        index: dotPos + 1 },
+      { name: "hundredths",    index: dotPos + 2 },
+      { name: "thousandths",   index: dotPos + 3 },
+      { name: "ones",          index: dotPos - 1 },
+      { name: "tens",          index: dotPos - 2 },
+      { name: "hundreds",      index: dotPos - 3 },
+    ].filter(p => p.index >= 0 && p.index < digits.length);
+
+    const chosen = places[randInt(0, places.length - 1)];
+    const answer = Number(digits[chosen.index]);
+
+    return {
+      q: `In the number ${number}, what digit is in the ${chosen.name} place?`,
+      a: answer
+    };
+  }
+
+  function measurementConversion() {
+    const conversions = [
+      // length
+      { q: (n) => `${n * 100} cm = ? m`,       a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} m = ? cm`,              a: (n) => n * 100, ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n * 1000} m = ? km`,       a: (n) => n,      ns: [1,2,3,4,5] },
+      { q: (n) => `${n} km = ? m`,              a: (n) => n * 1000, ns: [1,2,3,4,5] },
+      { q: (n) => `${n * 10} mm = ? cm`,        a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} cm = ? mm`,             a: (n) => n * 10,  ns: [1,2,3,4,5,6,7,8,9,10] },
+      // mass
+      { q: (n) => `${n * 1000} g = ? kg`,       a: (n) => n,      ns: [1,2,3,4,5] },
+      { q: (n) => `${n} kg = ? g`,              a: (n) => n * 1000, ns: [1,2,3,4,5] },
+      // time
+      { q: (n) => `${n * 60} seconds = ? minutes`, a: (n) => n,   ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n} minutes = ? seconds`,   a: (n) => n * 60,  ns: [1,2,3,4,5,6,7,8,9,10] },
+      { q: (n) => `${n * 60} minutes = ? hours`,a: (n) => n,      ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
+      { q: (n) => `${n} hours = ? minutes`,     a: (n) => n * 60,  ns: [1,2,3,4,5,6,7,8,9,10,11,12] },
+    ];
+    const c = conversions[randInt(0, conversions.length - 1)];
+    const n = c.ns[randInt(0, c.ns.length - 1)];
+    return { q: c.q(n), a: c.a(n) };
+  }
+
+  function solveForX() {
+    // Form: ax + b = c  →  x = (c - b) / a
+    const a = randInt(1, 10);
+    const x = randInt(1, 20);
+    const b = randInt(0, 20);
+    const c = a * x + b;
+    const qStr = b === 0
+      ? `Solve for x: ${a}x = ${c}`
+      : `Solve for x: ${a}x + ${b} = ${c}`;
+    return { q: qStr, a: x };
+  }
+
   const generators = [
     multiplicationFact,
     twoDigitOneDigit,
@@ -252,8 +273,35 @@ const db = firebase.database();
     twoDigitSubtraction,
     threeDigitAddition,
     threeDigitSubtraction,
-    roundingQuestion
+    roundingQuestion,
+    comparingDecimals,
+    placeValueQuestion,
+    measurementConversion,
+    solveForX
   ];
+
+  // ========== LEADERBOARD ==========
+  function loadLeaderboard(containerId) {
+    db.ref("students").once("value").then(snapshot => {
+      const container = document.getElementById(containerId);
+      if (!snapshot.exists()) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
+        return;
+      }
+      const entries = [];
+      snapshot.forEach(child => entries.push({ id: child.key, ...child.val() }));
+      entries.sort((a, b) => (b.points || 0) - (a.points || 0));
+      const medals   = ["🥇", "🥈", "🥉"];
+      const rowClass = ["gold", "silver", "bronze"];
+      container.innerHTML = entries.slice(0, 10).map((s, i) => `
+        <div class="lb-row ${rowClass[i] || ''}">
+          <span class="lb-rank">${medals[i] || (i + 1)}</span>
+          <span class="lb-name">${s.name || s.id}</span>
+          <span class="lb-pts">${s.points || 0} pts</span>
+        </div>
+      `).join("");
+    });
+  }
 
   // ========== APP FUNCTIONS ==========
   function generateQuestion() {
@@ -261,7 +309,6 @@ const db = firebase.database();
     document.getElementById("feedback").textContent = "";
     document.getElementById("answer-input").value = "";
     document.getElementById("answer-input").focus();
-
     const questionObj = generators[randInt(0, generators.length - 1)]();
     currentAnswer = questionObj.a;
     document.getElementById("question-text").textContent = questionObj.q;
@@ -272,7 +319,7 @@ const db = firebase.database();
     if (!name) return;
 
     studentName = name;
-    studentKey = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    studentKey  = name.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
     try {
       const snapshot = await db.ref("students/" + studentKey).once("value");
@@ -284,12 +331,12 @@ const db = firebase.database();
           name: studentName, points: 0, correct: 0, attempted: 0
         });
       }
-
       document.getElementById("student-name").textContent = studentName;
       document.getElementById("points").textContent = points;
       document.getElementById("login-screen").style.display = "none";
       document.getElementById("quiz-screen").style.display = "block";
       generateQuestion();
+      loadLeaderboard("quiz-leaderboard-list");
     } catch (err) {
       alert("Could not connect. Check your Firebase config.\n\n" + err.message);
     }
@@ -302,10 +349,9 @@ const db = firebase.database();
     if (input === "") return;
 
     const userAnswer = parseFloat(input);
-    const feedback = document.getElementById("feedback");
+    const feedback   = document.getElementById("feedback");
     answered = true;
 
-    // Read current stats
     const snap = await db.ref("students/" + studentKey).once("value");
     const data = snap.val() || {};
     const prevCorrect   = data.correct   || 0;
@@ -329,11 +375,12 @@ const db = firebase.database();
         attempted: prevAttempted + 1
       });
       document.getElementById("points").textContent = points;
+      // Refresh quiz leaderboard after each correct answer
+      loadLeaderboard("quiz-leaderboard-list");
     } else {
       streak = 0;
       feedback.className = "feedback incorrect";
       feedback.textContent = `The answer was ${currentAnswer}`;
-
       await db.ref("students/" + studentKey).update({
         attempted: prevAttempted + 1
       });
@@ -350,86 +397,21 @@ const db = firebase.database();
     document.getElementById("quiz-screen").style.display = "none";
     document.getElementById("login-screen").style.display = "block";
     document.getElementById("name-input").value = "";
-    loadLeaderboard();
+    loadLeaderboard("leaderboard-list");
   }
-
-  // ========== LEADERBOARD ==========
-  function loadLeaderboard() {
-  db.ref("students").once("value").then(snapshot => {
-
-    const list = document.getElementById("leaderboard-list");
-
-    if (!snapshot.exists()) {
-      list.innerHTML =
-        "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
-      return;
-    }
-
-    const entries = [];
-
-    snapshot.forEach(child => {
-      entries.push({
-        id: child.key,
-        ...child.val()
-      });
-    });
-function loadSidebarLeaderboard() {
-  db.ref("students").once("value").then(snapshot => {
-
-    const container = document.getElementById("sidebar-leaderboard");
-
-    if (!snapshot.exists()) {
-      container.innerHTML =
-        "<p style='color:#94a3b8;text-align:center;'>No scores yet</p>";
-      return;
-    }
-
-    const entries = [];
-
-    snapshot.forEach(child => {
-      entries.push({
-        id: child.key,
-        ...child.val()
-      });
-    });
-
-    entries.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-    const medals = ["🥇", "🥈", "🥉"];
-
-    container.innerHTML = entries.slice(0, 5).map((s, i) => `
-      <div class="lb-row">
-        <span class="lb-rank">${medals[i] || (i + 1)}</span>
-        <span class="lb-name">${s.name || s.id}</span>
-        <span class="lb-pts">${s.points || 0}</span>
-      </div>
-    `).join("");
-  });
-}
-    entries.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-    const medals = ["🥇", "🥈", "🥉"];
-    const rowClass = ["gold", "silver", "bronze"];
-
-    list.innerHTML = entries.slice(0, 10).map((s, i) => `
-      <div class="lb-row ${rowClass[i] || ''}">
-        <span class="lb-rank">${medals[i] || (i + 1)}</span>
-        <span class="lb-name">${s.name || s.id}</span>
-        <span class="lb-pts">${s.points || 0} pts</span>
-      </div>
-    `).join("");
-  });
-}
 
   // ========== EVENT LISTENERS ==========
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("start-btn").addEventListener("click", startApp);
     document.getElementById("submit-btn").addEventListener("click", checkAnswer);
     document.getElementById("logout-btn").addEventListener("click", logout);
-    document.getElementById("name-input").addEventListener("keydown", e => { if (e.key === "Enter") startApp(); });
-    document.getElementById("answer-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-    loadLeaderboard();
-   loadSidebarLeaderboard();
+    document.getElementById("name-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") startApp();
+    });
+    document.getElementById("answer-input").addEventListener("keydown", e => {
+      if (e.key === "Enter") checkAnswer();
+    });
+    loadLeaderboard("leaderboard-list");
   });
 </script>
 </body>
